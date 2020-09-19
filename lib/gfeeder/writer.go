@@ -41,6 +41,11 @@ func (gf *Gfeeder) sendCommand(l string) {
 // injectGcode adds a command to the gcode input feed, eventually sending it to the printer.
 func (gf *Gfeeder) injectGcode(cmd string) {
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				gf.log.Println("injectGcode failed")
+			}
+		}()
 		gf.feedIn <- cmd
 	}()
 }

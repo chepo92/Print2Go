@@ -67,12 +67,6 @@ func Callback(cb CallbackDataFunc) func(*Gfeeder) {
 // Echo prints a string on the printer screen.
 func (gf *Gfeeder) Echo(str string) {
 	// TODO: escape.
-	defer func() {
-		// Avoid panicing if we echoed something during shutdown.
-		if r := recover(); r != nil {
-			gf.log.Println("dropped an echo command.")
-		}
-	}()
 	gf.injectGcode(fmt.Sprintf("M117 %s", str))
 }
 
