@@ -47,7 +47,7 @@ func oneshotPrint() {
 	task := task.New(p, fh)
 	for !task.Done() {
 		time.Sleep(time.Second)
-		log.Printf(task.Describe())
+		log.Printf("%s", task.Describe())
 	}
 }
 
