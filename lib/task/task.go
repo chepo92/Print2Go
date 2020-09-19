@@ -71,6 +71,12 @@ func (t *Task) Describe() string {
 	return t.txt
 }
 
+func (t *Task) LogBuffer() []*gfeeder.CallbackData {
+	t.RLock()
+	defer t.RUnlock()
+	return t.logbuf
+}
+
 // Cancel calls the context cancel function, aborting the task.
 func (t *Task) Cancel() {
 	t.cancel()
@@ -84,6 +90,7 @@ func (t *Task) start(ctx context.Context) {
 	t.done = true
 }
 
+// called by gfeeder to update the status.
 func (t *Task) callback(d *gfeeder.CallbackData) {
 	t.Lock()
 	defer t.Unlock()
@@ -99,19 +106,8 @@ func (t *Task) callback(d *gfeeder.CallbackData) {
 		pct = float64(pos) / float64(t.inputSize) * 100
 	}
 
-	// If we have been running for some time, we can guess an ETA.
-	runtime := time.Now().Sub(t.epoch)
-	var eta time.Duration
-	if runtime > etaAfter && pct > 0.1 {
-		eta = time.Duration(float64(runtime.Nanoseconds()) / pct * (100 - pct))
-	}
-
 	// Assemble text and send it to printer on changes.
-	txt := fmt.Sprintf("%.1f%%", pct)
-	if eta > 0 {
-		txt += fmt.Sprintf(", ETA %s", eta)
-	}
-	txt += fmt.Sprintf(", %d/%d bytes", pos, t.inputSize)
+	txt := fmt.Sprintf("Progress: %.1f%%", pct)
 	if txt != t.txt {
 		t.txt = txt
 		t.gf.Echo(txt)
