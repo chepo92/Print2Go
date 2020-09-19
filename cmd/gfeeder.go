@@ -34,17 +34,21 @@ func oneshotPrint() {
 	log.Printf("Printing '%s' on %s\n", *flagGcode, *flagTTY)
 	p, err := serialPort()
 	if err != nil {
-		xdie(err.Error())
+		xdie("failed to attach serial port: %v", err)
 	}
 	defer p.Close()
 
 	fh, err := os.Open(*flagGcode)
 	if err != nil {
-		xdie(err.Error())
+		xdie("failed to open gcode: %v", err)
 	}
 	defer fh.Close()
 
-	task := task.New(p, fh)
+	task, err := task.New(p, fh)
+	if err != nil {
+		xdie("task setup failed: %v", err)
+	}
+
 	for !task.Done() {
 		time.Sleep(time.Second)
 		log.Printf("%s", task.Describe())
@@ -59,8 +63,8 @@ func serialPort() (*serial.Port, error) {
 	return p, nil
 }
 
-func xdie(str string) {
-	fmt.Printf("%s\n", str)
+func xdie(f string, args ...interface{}) {
+	fmt.Printf(f, args...)
 	flag.PrintDefaults()
 	os.Exit(1)
 }
