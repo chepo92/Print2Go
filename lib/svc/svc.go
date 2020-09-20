@@ -51,6 +51,10 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 		svc.localUpload(w, rq)
 		return
 	}
+	if rq.URL.Path == "/" {
+		svc.indexPage(w)
+		return
+	}
 	http.Error(w, "unknown url", 404)
 }
 
