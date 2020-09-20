@@ -33,6 +33,8 @@ type Task struct {
 	epoch time.Time
 	// Description of the print progress
 	txt string
+	// percentage done
+	donePercent float64
 	// logbuf
 	logbuf []*gfeeder.CallbackData
 }
@@ -105,13 +107,12 @@ func (t *Task) callback(d *gfeeder.CallbackData) {
 
 	// Try to calculate overall percentage.
 	pos, _ := t.inputFh.Seek(0, os.SEEK_CUR)
-	var pct float64
 	if sz := t.inputStat.Size(); sz > 0 {
-		pct = float64(pos) / float64(sz) * 100
+		t.donePercent = float64(pos) / float64(sz) * 100
 	}
 
 	// Assemble text and send it to printer on changes.
-	txt := fmt.Sprintf("%.1f%% (%s)", pct, t.inputStat.Name())
+	txt := fmt.Sprintf("%.1f%% (%s)", t.donePercent, t.inputStat.Name())
 	if txt != t.txt {
 		t.txt = txt
 		t.gf.Echo(txt)
