@@ -4,17 +4,22 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/tarm/serial"
+	"gitlab.com/adrian_blx/gfeeder/lib/store/localstore"
+	"gitlab.com/adrian_blx/gfeeder/lib/svc"
 	"gitlab.com/adrian_blx/gfeeder/lib/task"
 )
 
 var (
-	flagTTY   = flag.String("tty", "/dev/ttyUSB0", "tty to use")
-	flagBaud  = flag.Int("baud", 115200, "baud rate of -port")
-	flagGcode = flag.String("gcode", "", "file containing gcode")
+	flagTTY     = flag.String("tty", "/dev/ttyUSB0", "tty to use")
+	flagBaud    = flag.Int("baud", 115200, "baud rate of -port")
+	flagGcode   = flag.String("gcode", "", "file containing gcode")
+	flagListen  = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
+	flagStorage = flag.String("storage", "/tmp/gfeeder", "path to store gcode in")
 )
 
 func main() {
@@ -23,11 +28,19 @@ func main() {
 	if *flagTTY == "" {
 		xdie("-tty must be specified")
 	}
-	if *flagGcode == "" {
-		xdie("-gcode must be specified")
+	if *flagGcode != "" {
+		oneshotPrint()
+		return
 	}
 
-	oneshotPrint()
+	srv := &http.Server{
+		Addr: *flagListen,
+	}
+
+	s := svc.New(srv, localstore.New(*flagStorage), serialPort)
+	if err := s.Run(); err != nil {
+		xdie("server exited: %v", err)
+	}
 }
 
 func oneshotPrint() {
