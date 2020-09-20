@@ -19,8 +19,8 @@ var (
 
 type Task struct {
 	sync.RWMutex
-	// True if the print task is done.
-	done bool
+	// Internal print context.
+	ctx context.Context
 	// Function to cancel the print context.
 	cancel context.CancelFunc
 	// Gfeeder reference.
@@ -50,6 +50,7 @@ func New(p *serial.Port, fh *os.File) (*Task, error) {
 	gf := gfeeder.New(p, fh)
 	t := &Task{
 		gf:        gf,
+		ctx:       ctx,
 		cancel:    cancel,
 		inputStat: stat,
 		inputFh:   fh,
@@ -59,15 +60,17 @@ func New(p *serial.Port, fh *os.File) (*Task, error) {
 	}
 	// horray for circular dependencies!
 	gfeeder.Callback(t.callback)(gf)
-	go t.start(ctx)
+	go t.start()
 	return t, nil
 }
 
 // Returns true if the task is done.
 func (t *Task) Done() bool {
-	t.RLock()
-	defer t.RUnlock()
-	return t.done
+	return t.ctx.Err() != nil
+}
+
+func (t *Task) WaitDone() <-chan struct{} {
+	return t.ctx.Done()
 }
 
 // Describe describes the status of the task.
@@ -89,11 +92,10 @@ func (t *Task) Cancel() {
 }
 
 // start internally launches the task and sets 'done' once the print finished.
-func (t *Task) start(ctx context.Context) {
-	t.gf.Start(ctx)
-	t.Lock()
-	defer t.Unlock()
-	t.done = true
+func (t *Task) start() {
+	t.gf.Start(t.ctx)
+	// mark own context as done.
+	t.Cancel()
 }
 
 // called by gfeeder to update the status.
