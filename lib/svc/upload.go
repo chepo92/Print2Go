@@ -52,6 +52,8 @@ func (svc *Svc) localUpload(w http.ResponseWriter, rq *http.Request) {
 
 	if rq.FormValue("print") == "true" {
 		svc.log("Enqueueing %s, %s for printing after upload", path, h.Filename)
-		svc.enqueuePrint(path, h.Filename)
+		if err := svc.enqueuePrint(path, h.Filename); err != nil {
+			svc.log("enqueueing failed: %v", err)
+		}
 	}
 }

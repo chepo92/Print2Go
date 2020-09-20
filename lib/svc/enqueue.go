@@ -34,10 +34,15 @@ func (svc *Svc) enqueuePrint(path, file string) error {
 	svc.task = t
 
 	go func() {
-		fmt.Printf(">>> Waiting for task to be done\n")
+		svc.log("task enqueued: %p", t)
 		<-t.WaitDone()
 		fh.Close()
 		s.Close()
+		svc.log("task done, cleaning up: %p", t)
+
+		svc.Lock()
+		defer svc.Unlock()
+		svc.task = nil
 	}()
 	return nil
 }

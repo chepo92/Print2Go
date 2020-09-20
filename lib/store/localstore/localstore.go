@@ -38,7 +38,7 @@ func (ls *LocalStore) ReadFile(path, file string) (*os.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid path")
 	}
-	return os.Open(filepath.Join(path, file))
+	return os.Open(filepath.Join(ls.base, path, file))
 }
 
 func cleanPaths(path, file string) (string, string, error) {

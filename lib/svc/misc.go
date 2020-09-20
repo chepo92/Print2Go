@@ -6,7 +6,7 @@ import (
 )
 
 func (svc *Svc) log(f string, args ...interface{}) {
-	fmt.Printf(f, args...)
+	fmt.Printf(f+"\n", args...)
 }
 
 func (svc *Svc) error(w http.ResponseWriter, msg string) {
