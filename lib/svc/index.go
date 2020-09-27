@@ -24,17 +24,66 @@ func (svc *Svc) indexPage(w http.ResponseWriter) {
 <div class="container" id="app">
 <br>
 
-<template v-if="jobRunning">
+<div class="modal fade" id="cancelDialog" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Cancel print operation</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+Do you really want to cancel the ongoing print?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" v-on:click="onCancelJob" data-dismiss="modal">Yes, cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <h3>{{ jobDescription }}</h3>
-  <button v-on:click="onCancelJob" class="btn btn-danger">Cancel current job</button>
+<div class="modal fade" id="uploadDialog" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload gcode</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+Select gcode to upload:
+    <input type="file" @change="onGcodeFileSelected" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+    <button v-on:click="onGcodeStartUpload" class="btn btn-primary" :disabled="!this.selectedFile">Upload and print</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<template v-if="jobRunning">
+<div class="progress">
+  <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+</div>
+Printer is currently working: {{ jobDescription }}
+<br><br>
+<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelDialog">Cancel print</button>
+
+<hr>
+<div v-for="item in jobLogBuff">
+<div>{{ item }}</div>
+</di>
+
+
 </template>
 <template v-else>
-  <div class="file-upload">
-    <input type="file" @change="onGcodeFileSelected" />
-    <br>
-    <button @click="onGcodeStartUpload" class="btn btn-primary" :disabled="!this.selectedFile">Print file</button>
-  </div>
+No print is running, you can
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#uploadDialog">upload gcode</button> to start one.
 </template>
 
 </div>
@@ -45,6 +94,7 @@ new Vue({
   data: {
     jobRunning: false,
     jobDescription: "",
+    jobLogBuff: [],
     selectedFile: "",
   },
   methods: {
@@ -52,13 +102,10 @@ new Vue({
       jQuery.get('api/job', function (response) {
         this.jobRunning = response.job != null;
         this.jobDescription = response.status;
+        this.jobLogBuff = response.buffer;
       }.bind(this));
     },
     onCancelJob: function() {
-      var ack = prompt("Really cancel? Type 'YES' (all caps) to confirm", "");
-      if (ack != "YES") {
-        return;
-      }
       jQuery.ajax({
         url: 'api/job',
         method: 'POST',
@@ -82,13 +129,13 @@ new Vue({
         method: 'POST',
         success: function(data){
             this.selectedFile = "";
-            this.jobRunning = true;
-            alert('print uploaded');
+            $('#uploadDialog').modal('hide');
         },
         error: function(data) {
             alert('post failure: ' + data.responseText);
         },
       });
+      return true;
     },
   },
   mounted: function () {
