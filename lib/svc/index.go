@@ -36,24 +36,6 @@ func (svc *Svc) indexPage(w http.ResponseWriter) {
 </div>
 <script>
 
-function normalize(x) {
-  if (x < 1024) {
-   return x + ' Bytes';
-  }
-  if (x < 4096) {
-   return (x/1024).toFixed(2) + ' KB';
-  }
-  return (x/1024/1024).toFixed(2) + ' MB';
-}
-
-function duration(x) {
-  d = ((new Date()) - x)/1000;
-  if (d < 60) {
-    return d.toFixed(0) + ' sec';
-  }
-  return (d/60).toFixed(2) + ' min';
-}
-
 new Vue({
   el: '#app',
   data: {
@@ -69,6 +51,10 @@ new Vue({
       }.bind(this));
     },
     onCancelJob: function() {
+      var ack = prompt("Really cancel? Type 'YES' (all caps) to confirm", "");
+      if (ack != "YES") {
+        return;
+      }
       jQuery.ajax({
         url: 'api/job',
         method: 'POST',
