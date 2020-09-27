@@ -7,6 +7,7 @@ import (
 type jobStatus struct {
 	Job    struct{} `json:"job"`
 	Status string   `json:"status"`
+	Buffer []string `json:"buffer"`
 }
 
 func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
@@ -15,8 +16,17 @@ func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
 
 	if rq.Method == "GET" {
 		if svc.task != nil {
+
+			dbg := make([]string, 0)
+			for _, v := range svc.task.LogBuffer() {
+				if v == nil {
+					continue
+				}
+				dbg = append(dbg, v.LastSent)
+			}
 			jsonWrite(w, jobStatus{
 				Status: svc.task.Describe(),
+				Buffer: dbg,
 			})
 		}
 		return
