@@ -82,8 +82,15 @@ Printer is currently working: {{ jobDescription }}
 
 </template>
 <template v-else>
-No print is running, you can
-<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#uploadDialog">upload gcode</button> to start one.
+<div class="alert alert-primary" role="alert">Printer is idle.</div>
+
+<ul class="list-group">
+<li class="list-group-item"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#uploadDialog">Upload & Print</button></li>
+<li class="list-group-item"><button v-on:click="onBuiltinGcode('z-axis')" type="button" class="btn btn-primary">Lift Z-Axis</button></li>
+<li class="list-group-item"><button v-on:click="onBuiltinGcode('heat')" type="button" class="btn btn-primary">Heat extruder</button></li>
+<li class="list-group-item"><button v-on:click="onBuiltinGcode('f-move')" type="button" class="btn btn-primary">Move filament</button></li>
+<li class="list-group-item"><button v-on:click="onBuiltinGcode('reset')" type="button" class="btn btn-primary">Reset printer</button></li>
+</ul>
 </template>
 
 </div>
@@ -110,6 +117,12 @@ new Vue({
         url: 'api/job',
         method: 'POST',
         data: {cancel: true},
+      });
+    },
+    onBuiltinGcode: function(arg) {
+      jQuery.ajax({
+        url: 'api/gcode/action',
+        data: { action: arg },
       });
     },
     onGcodeFileSelected: function(e) {
