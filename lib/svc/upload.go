@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -20,6 +21,7 @@ type uploadReplyFiles struct {
 func (svc *Svc) localUpload(w http.ResponseWriter, rq *http.Request) {
 	f, h, err := rq.FormFile("file")
 	if err != nil {
+		fmt.Printf(">>> ERR: %+v\n", err)
 		svc.error(w, "failed to parse form data")
 		return
 	}

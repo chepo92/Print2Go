@@ -69,6 +69,7 @@ func oneshotPrint() {
 }
 
 func serialPort() (*serial.Port, error) {
+	fmt.Printf("++++ opening serial port\n")
 	p, err := serial.OpenPort(&serial.Config{Name: *flagTTY, Baud: *flagBaud})
 	if err != nil {
 		return nil, err

@@ -2,7 +2,6 @@ package svc
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -42,13 +41,16 @@ func (svc *Svc) Run() error {
 }
 
 func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
-	fmt.Printf(">> %+v\n", rq)
 	if rq.URL.Path == "/api/version" {
 		svc.versionReply(w, rq)
 		return
 	}
 	if rq.URL.Path == "/api/files/local" && rq.Method == "POST" {
 		svc.localUpload(w, rq)
+		return
+	}
+	if rq.URL.Path == "/api/job" {
+		svc.jobStatus(w, rq)
 		return
 	}
 	if rq.URL.Path == "/" {
