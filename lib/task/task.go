@@ -2,13 +2,13 @@ package task
 
 import (
 	"context"
+	"io"
 	"os"
 	"sync"
 	"time"
 
 	"fmt"
 
-	"github.com/tarm/serial"
 	"gitlab.com/adrian_blx/gfeeder/lib/gfeeder"
 )
 
@@ -39,7 +39,7 @@ type Task struct {
 	logbuf []*gfeeder.CallbackData
 }
 
-func New(p *serial.Port, fh *os.File) (*Task, error) {
+func New(p io.ReadWriteCloser, fh *os.File) (*Task, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	stat, err := fh.Stat()

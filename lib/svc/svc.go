@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/tarm/serial"
 	"gitlab.com/adrian_blx/gfeeder/lib/task"
 	"os"
 )
@@ -16,7 +15,7 @@ type Svc struct {
 	srv        *http.Server
 	storage    FileStorage
 	task       *task.Task
-	serialPort func() (*serial.Port, error)
+	serialPort func() (io.ReadWriteCloser, error)
 }
 
 type FileStorage interface {
@@ -24,7 +23,7 @@ type FileStorage interface {
 	ReadFile(path, filename string) (*os.File, error)
 }
 
-func New(srv *http.Server, store FileStorage, serial func() (*serial.Port, error)) *Svc {
+func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser, error)) *Svc {
 	svc := &Svc{
 		srv:        srv,
 		storage:    store,

@@ -37,10 +37,13 @@ func (svc *Svc) enqueuePrint(path, file string) error {
 		svc.log("task enqueued: %p", t)
 		<-t.WaitDone()
 		fh.Close()
-		s.Flush()
 		fmt.Printf("++++ closing serial port\n")
-		err := s.Close()
-		svc.log("task done, cleaning up: %p, serial err = %v", t, err)
+		// triggers a send before close, unblocking the FH.
+		s.Write([]byte("M117 done\n"))
+		if err := s.Close(); err != nil {
+			panic(err)
+		}
+		svc.log("task done, cleaning up: %p", t)
 
 		svc.Lock()
 		defer svc.Unlock()

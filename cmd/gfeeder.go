@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/tarm/serial"
+	"github.com/jacobsa/go-serial/serial"
 	"gitlab.com/adrian_blx/gfeeder/lib/store/localstore"
 	"gitlab.com/adrian_blx/gfeeder/lib/svc"
 	"gitlab.com/adrian_blx/gfeeder/lib/task"
@@ -68,9 +69,15 @@ func oneshotPrint() {
 	}
 }
 
-func serialPort() (*serial.Port, error) {
+func serialPort() (io.ReadWriteCloser, error) {
 	fmt.Printf("++++ opening serial port\n")
-	p, err := serial.OpenPort(&serial.Config{Name: *flagTTY, Baud: *flagBaud})
+	p, err := serial.Open(serial.OpenOptions{
+		PortName:        *flagTTY,
+		BaudRate:        uint(*flagBaud),
+		StopBits:        1,
+		DataBits:        8,
+		MinimumReadSize: 1,
+	})
 	if err != nil {
 		return nil, err
 	}
