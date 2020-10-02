@@ -17,6 +17,21 @@ var (
 	etaAfter = time.Duration(5 * time.Minute)
 )
 
+type TaskStatus struct {
+	// Filename we are currently executing.
+	File string
+	// Human readable description.
+	Text string
+	// Percentage printend.
+	Done float64
+	// Whether or not we actually do anything.
+	Active bool
+	// Last seen commands
+	LogBuffer []takoprint.CallbackData
+	// Internal fingerprint of this status message.
+	fp int64
+}
+
 type Task struct {
 	sync.RWMutex
 	// Internal print context.
@@ -29,65 +44,57 @@ type Task struct {
 	inputStat os.FileInfo
 	// Input filehandle.
 	inputFh *os.File
-	// When the print started
-	epoch time.Time
-	// Description of the print progress
-	txt string
-	// percentage done
-	donePercent float64
-	// logbuf
-	logbuf []*takoprint.CallbackData
+	// Status of the currently running print.
+	status TaskStatus
 }
 
-func New(p io.ReadWriteCloser, fh *os.File) (*Task, error) {
+func New() *Task {
+	return &Task{}
+}
+func (t *Task) Launch(p io.ReadWriteCloser, fh *os.File) error {
+	t.Lock()
+	defer t.Unlock()
+
+	if t.inputFh != nil {
+		return fmt.Errorf("task already running")
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	stat, err := fh.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("stat failed: %v", err)
+		return fmt.Errorf("stat failed: %v", err)
 	}
 
-	tp := takoprint.New(p, fh)
-	t := &Task{
-		tp:        tp,
-		ctx:       ctx,
-		cancel:    cancel,
-		inputStat: stat,
-		inputFh:   fh,
-		epoch:     time.Now(),
-		txt:       fmt.Sprintf("<%s>", stat.Name()),
-		logbuf:    make([]*takoprint.CallbackData, 20),
-	}
+	t.tp = takoprint.New(p, fh)
+	t.ctx = ctx
+	t.cancel = cancel
+	t.inputFh = fh
+	t.inputStat = stat
+
 	// horray for circular dependencies!
-	takoprint.Callback(t.callback)(tp)
+	takoprint.Callback(t.callback)(t.tp)
 	go t.start()
-	return t, nil
+	return nil
 }
 
 // Returns true if the task is done.
 func (t *Task) Done() bool {
-	return t.ctx.Err() != nil
+	t.RLock()
+	defer t.RUnlock()
+	return t.ctx == nil || t.ctx.Err() != nil
 }
 
 func (t *Task) WaitDone() <-chan struct{} {
+	t.RLock()
+	defer t.RUnlock()
 	return t.ctx.Done()
-}
-
-// Describe describes the status of the task.
-func (t *Task) Describe() string {
-	t.RLock()
-	defer t.RUnlock()
-	return t.txt
-}
-
-func (t *Task) LogBuffer() []*takoprint.CallbackData {
-	t.RLock()
-	defer t.RUnlock()
-	return t.logbuf
 }
 
 // Cancel calls the context cancel function, aborting the task.
 func (t *Task) Cancel() {
+	t.RLock()
+	defer t.RUnlock()
 	t.cancel()
 }
 
@@ -95,7 +102,22 @@ func (t *Task) Cancel() {
 func (t *Task) start() {
 	t.tp.Start(t.ctx)
 	// mark own context as done.
+
+	// cancel our contex and fire an empty callback
 	t.Cancel()
+	t.callback(nil)
+	t.nullify()
+}
+
+func (t *Task) nullify() {
+	t.Lock()
+	defer t.Unlock()
+
+	t.tp = nil
+	t.ctx = nil
+	t.cancel = nil
+	t.inputFh = nil
+	t.inputStat = nil
 }
 
 // called by takoprint to update the status.
@@ -103,20 +125,23 @@ func (t *Task) callback(d *takoprint.CallbackData) {
 	t.Lock()
 	defer t.Unlock()
 
-	// Keep a couple of seen replies.
-	t.logbuf = append(t.logbuf, d)
-	t.logbuf = t.logbuf[1:len(t.logbuf)]
+	fmt.Printf(">>> Callback underway: %+v\n", d)
+	/*
+		// Keep a couple of seen replies.
+		t.logbuf = append(t.logbuf, d)
+		t.logbuf = t.logbuf[1:len(t.logbuf)]
 
-	// Try to calculate overall percentage.
-	pos, _ := t.inputFh.Seek(0, os.SEEK_CUR)
-	if sz := t.inputStat.Size(); sz > 0 {
-		t.donePercent = float64(pos) / float64(sz) * 100
-	}
+		// Try to calculate overall percentage.
+		pos, _ := t.inputFh.Seek(0, os.SEEK_CUR)
+		if sz := t.inputStat.Size(); sz > 0 {
+			t.donePercent = float64(pos) / float64(sz) * 100
+		}
 
-	// Assemble text and send it to printer on changes.
-	txt := fmt.Sprintf("%.1f%% (%s)", t.donePercent, t.inputStat.Name())
-	if txt != t.txt {
-		t.txt = txt
-		t.tp.Echo(txt)
-	}
+		// Assemble text and send it to printer on changes.
+		txt := fmt.Sprintf("%.1f%% (%s)", t.donePercent, t.inputStat.Name())
+		if txt != t.txt {
+			t.txt = txt
+			t.tp.Echo(txt)
+		}
+	*/
 }

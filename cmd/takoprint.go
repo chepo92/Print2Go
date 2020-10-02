@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"time"
 
-	"github.com/jacobsa/go-serial/serial"
 	"gitlab.com/adrian_blx/takoprint/lib/store/localstore"
 	"gitlab.com/adrian_blx/takoprint/lib/svc"
 	"gitlab.com/adrian_blx/takoprint/lib/task"
@@ -46,6 +47,7 @@ func main() {
 
 func oneshotPrint() {
 	log.Printf("Printing '%s' on %s\n", *flagGcode, *flagTTY)
+	t := task.New()
 	p, err := serialPort()
 	if err != nil {
 		xdie("failed to attach serial port: %v", err)
@@ -58,30 +60,59 @@ func oneshotPrint() {
 	}
 	defer fh.Close()
 
-	task, err := task.New(p, fh)
+	err = t.Launch(p, fh)
 	if err != nil {
 		xdie("task setup failed: %v", err)
 	}
 
-	for !task.Done() {
+	for !t.Done() {
 		time.Sleep(time.Second)
-		log.Printf("%s", task.Describe())
+		log.Printf("working...\n")
 	}
 }
 
+type SerialPort struct {
+	context context.Context
+	cancel  context.CancelFunc
+	stdout  io.ReadCloser
+	stdin   io.WriteCloser
+}
+
 func serialPort() (io.ReadWriteCloser, error) {
-	fmt.Printf("++++ opening serial port\n")
-	p, err := serial.Open(serial.OpenOptions{
-		PortName:        *flagTTY,
-		BaudRate:        uint(*flagBaud),
-		StopBits:        1,
-		DataBits:        8,
-		MinimumReadSize: 1,
-	})
+	ctx, cancel := context.WithCancel(context.Background())
+	fmt.Printf("> FIXME: BAUD RATE\n")
+	cmd := exec.CommandContext(ctx, "socat", *flagTTY, "-")
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
 	}
-	return p, nil
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	return &SerialPort{
+		context: ctx,
+		cancel:  cancel,
+		stdin:   stdin,
+		stdout:  stdout,
+	}, cmd.Start()
+}
+
+func (sp *SerialPort) Close() error {
+	sp.cancel()
+	sp.stdin.Close()
+	sp.stdout.Close()
+	return nil
+}
+
+func (sp *SerialPort) Write(b []byte) (int, error) {
+	return sp.stdin.Write(b)
+}
+
+func (sp *SerialPort) Read(b []byte) (int, error) {
+	return sp.stdout.Read(b)
 }
 
 func xdie(f string, args ...interface{}) {

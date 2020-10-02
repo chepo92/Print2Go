@@ -28,6 +28,7 @@ func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser,
 		srv:        srv,
 		storage:    store,
 		serialPort: serial,
+		task:       task.New(),
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/", svc)
