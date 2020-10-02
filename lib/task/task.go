@@ -9,7 +9,7 @@ import (
 
 	"fmt"
 
-	"gitlab.com/adrian_blx/gfeeder/lib/gfeeder"
+	"gitlab.com/adrian_blx/takoprint/lib/takoprint"
 )
 
 var (
@@ -24,7 +24,7 @@ type Task struct {
 	// Function to cancel the print context.
 	cancel context.CancelFunc
 	// Gfeeder reference.
-	gf *gfeeder.Gfeeder
+	gf *takoprint.Gfeeder
 	// Size of input file.
 	inputStat os.FileInfo
 	// Input filehandle.
@@ -36,7 +36,7 @@ type Task struct {
 	// percentage done
 	donePercent float64
 	// logbuf
-	logbuf []*gfeeder.CallbackData
+	logbuf []*takoprint.CallbackData
 }
 
 func New(p io.ReadWriteCloser, fh *os.File) (*Task, error) {
@@ -47,7 +47,7 @@ func New(p io.ReadWriteCloser, fh *os.File) (*Task, error) {
 		return nil, fmt.Errorf("stat failed: %v", err)
 	}
 
-	gf := gfeeder.New(p, fh)
+	gf := takoprint.New(p, fh)
 	t := &Task{
 		gf:        gf,
 		ctx:       ctx,
@@ -56,10 +56,10 @@ func New(p io.ReadWriteCloser, fh *os.File) (*Task, error) {
 		inputFh:   fh,
 		epoch:     time.Now(),
 		txt:       fmt.Sprintf("<%s>", stat.Name()),
-		logbuf:    make([]*gfeeder.CallbackData, 20),
+		logbuf:    make([]*takoprint.CallbackData, 20),
 	}
 	// horray for circular dependencies!
-	gfeeder.Callback(t.callback)(gf)
+	takoprint.Callback(t.callback)(gf)
 	go t.start()
 	return t, nil
 }
@@ -80,7 +80,7 @@ func (t *Task) Describe() string {
 	return t.txt
 }
 
-func (t *Task) LogBuffer() []*gfeeder.CallbackData {
+func (t *Task) LogBuffer() []*takoprint.CallbackData {
 	t.RLock()
 	defer t.RUnlock()
 	return t.logbuf
@@ -98,8 +98,8 @@ func (t *Task) start() {
 	t.Cancel()
 }
 
-// called by gfeeder to update the status.
-func (t *Task) callback(d *gfeeder.CallbackData) {
+// called by takoprint to update the status.
+func (t *Task) callback(d *takoprint.CallbackData) {
 	t.Lock()
 	defer t.Unlock()
 

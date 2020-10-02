@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"gitlab.com/adrian_blx/gfeeder/lib/task"
+	"gitlab.com/adrian_blx/takoprint/lib/task"
 	"os"
 )
 
@@ -81,7 +81,7 @@ func (svc *Svc) versionReply(w http.ResponseWriter, rq *http.Request) {
 	}{
 		API:     "0.1",
 		Version: "0.20200918",
-		Banner:  "OctoPrint compatible gfeeder api",
+		Banner:  "OctoPrint compatible takoprint api",
 	}
 	jsonWrite(w, reply)
 }

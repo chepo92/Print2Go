@@ -1,4 +1,4 @@
-package gfeeder
+package takoprint
 
 type CallbackData struct {
 	LastSent string

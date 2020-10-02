@@ -1,4 +1,4 @@
-package gfeeder
+package takoprint
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	"gitlab.com/adrian_blx/gfeeder/lib/chanreader"
+	"gitlab.com/adrian_blx/takoprint/lib/chanreader"
 )
 
 type Gfeeder struct {
@@ -33,7 +33,7 @@ type stats struct {
 	lastCmd string
 }
 
-// New returns a new gfeeder instance.
+// New returns a new takoprint instance.
 func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Gfeeder)) *Gfeeder {
 	gf := &Gfeeder{
 		serialOut: s,
@@ -45,7 +45,7 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Gfeeder)) *Gfeeder {
 	}
 
 	if gf.log == nil {
-		gf.log = log.New(os.Stderr, "gfeeder ", 0)
+		gf.log = log.New(os.Stderr, "takoprint ", 0)
 	}
 	return gf
 }

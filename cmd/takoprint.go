@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/jacobsa/go-serial/serial"
-	"gitlab.com/adrian_blx/gfeeder/lib/store/localstore"
-	"gitlab.com/adrian_blx/gfeeder/lib/svc"
-	"gitlab.com/adrian_blx/gfeeder/lib/task"
+	"gitlab.com/adrian_blx/takoprint/lib/store/localstore"
+	"gitlab.com/adrian_blx/takoprint/lib/svc"
+	"gitlab.com/adrian_blx/takoprint/lib/task"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 	flagBaud    = flag.Int("baud", 115200, "baud rate of -port")
 	flagGcode   = flag.String("gcode", "", "file containing gcode")
 	flagListen  = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
-	flagStorage = flag.String("storage", "/tmp/gfeeder", "path to store gcode in")
+	flagStorage = flag.String("storage", "/tmp/takoprint", "path to store gcode in")
 )
 
 func main() {

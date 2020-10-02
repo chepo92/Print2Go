@@ -3,7 +3,7 @@ package svc
 import (
 	"fmt"
 
-	"gitlab.com/adrian_blx/gfeeder/lib/task"
+	"gitlab.com/adrian_blx/takoprint/lib/task"
 )
 
 func (svc *Svc) enqueuePrint(path, file string) error {
