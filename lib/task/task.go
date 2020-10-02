@@ -23,8 +23,8 @@ type Task struct {
 	ctx context.Context
 	// Function to cancel the print context.
 	cancel context.CancelFunc
-	// Gfeeder reference.
-	gf *takoprint.Gfeeder
+	// Takoprint reference.
+	tp *takoprint.Takoprint
 	// Size of input file.
 	inputStat os.FileInfo
 	// Input filehandle.
@@ -47,9 +47,9 @@ func New(p io.ReadWriteCloser, fh *os.File) (*Task, error) {
 		return nil, fmt.Errorf("stat failed: %v", err)
 	}
 
-	gf := takoprint.New(p, fh)
+	tp := takoprint.New(p, fh)
 	t := &Task{
-		gf:        gf,
+		tp:        tp,
 		ctx:       ctx,
 		cancel:    cancel,
 		inputStat: stat,
@@ -59,7 +59,7 @@ func New(p io.ReadWriteCloser, fh *os.File) (*Task, error) {
 		logbuf:    make([]*takoprint.CallbackData, 20),
 	}
 	// horray for circular dependencies!
-	takoprint.Callback(t.callback)(gf)
+	takoprint.Callback(t.callback)(tp)
 	go t.start()
 	return t, nil
 }
@@ -93,7 +93,7 @@ func (t *Task) Cancel() {
 
 // start internally launches the task and sets 'done' once the print finished.
 func (t *Task) start() {
-	t.gf.Start(t.ctx)
+	t.tp.Start(t.ctx)
 	// mark own context as done.
 	t.Cancel()
 }
@@ -117,6 +117,6 @@ func (t *Task) callback(d *takoprint.CallbackData) {
 	txt := fmt.Sprintf("%.1f%% (%s)", t.donePercent, t.inputStat.Name())
 	if txt != t.txt {
 		t.txt = txt
-		t.gf.Echo(txt)
+		t.tp.Echo(txt)
 	}
 }

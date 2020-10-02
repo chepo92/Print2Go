@@ -8,16 +8,16 @@ type CallbackData struct {
 
 type CallbackDataFunc func(*CallbackData)
 
-func (gf *Gfeeder) fireCallback(l string) {
-	if gf.cb == nil {
+func (tf *Takoprint) fireCallback(l string) {
+	if tf.cb == nil {
 		return
 	}
-	gf.RLock()
+	tf.RLock()
 	v := &CallbackData{
-		LastSent: gf.stats.lastCmd,
-		NumSent:  gf.stats.numSent,
+		LastSent: tf.stats.lastCmd,
+		NumSent:  tf.stats.numSent,
 		Reply:    l,
 	}
-	gf.RUnlock()
-	go gf.cb(v)
+	tf.RUnlock()
+	go tf.cb(v)
 }

@@ -11,7 +11,7 @@ import (
 	"gitlab.com/adrian_blx/takoprint/lib/chanreader"
 )
 
-type Gfeeder struct {
+type Takoprint struct {
 	sync.RWMutex
 	log *log.Logger
 	// input from serial port
@@ -34,77 +34,77 @@ type stats struct {
 }
 
 // New returns a new takoprint instance.
-func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Gfeeder)) *Gfeeder {
-	gf := &Gfeeder{
+func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Takoprint)) *Takoprint {
+	tp := &Takoprint {
 		serialOut: s,
 		serialIn:  chanreader.New(s, chanreader.NopFilter()),
 		feedIn:    chanreader.New(f, chanreader.GcodeFilter()),
 	}
 	for _, opt := range opts {
-		opt(gf)
+		opt(tp)
 	}
 
-	if gf.log == nil {
-		gf.log = log.New(os.Stderr, "takoprint ", 0)
+	if tp.log == nil {
+		tp.log = log.New(os.Stderr, "takoprint ", 0)
 	}
-	return gf
+	return tp 
 }
 
 // Logger configures a custom logger instance.
-func Logger(l *log.Logger) func(*Gfeeder) {
-	return func(g *Gfeeder) {
-		g.log = l
+func Logger(l *log.Logger) func(*Takoprint) {
+	return func(tp *Takoprint) {
+		tp.log = l
 	}
 }
 
 // Callback configures an event callback consumer
-func Callback(cb CallbackDataFunc) func(*Gfeeder) {
-	return func(g *Gfeeder) {
-		g.cb = cb
+func Callback(cb CallbackDataFunc) func(*Takoprint) {
+	return func(tp *Takoprint) {
+		tp.cb = cb
 	}
 }
 
 // Echo prints a string on the printer screen.
-func (gf *Gfeeder) Echo(str string) {
+func (tp *Takoprint) Echo(str string) {
 	// TODO: escape.
-	gf.injectGcode(fmt.Sprintf("M117 %s", str))
+	tp.injectGcode(fmt.Sprintf("M117 %s", str))
 }
 
 // Start feeds input data to the serial output.
-func (gf *Gfeeder) Start(ctx context.Context) {
+func (tp *Takoprint) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	okChan := make(chan bool, 1) // written to by readPrinter if it accept more data.
 
 	// give printer some time to become ready.
-	gf.waitReady()
+	tp.waitReady()
 
 	// mark printer as ready for first command.
 	okChan <- true
 
 	// Feeds the printer with input from the specified gcode io stream.
 	wctx, wcancel := context.WithCancel(ctx)
-	go gf.feedPrinter(wctx, wcancel, okChan)
+	go tp.feedPrinter(wctx, wcancel, okChan)
 
 	// Reads back messages from the printer and signaling need for new input on okChan.
 	rctx, rcancel := context.WithCancel(ctx)
-	go gf.readPrinter(rctx, rcancel, okChan)
+	go tp.readPrinter(rctx, rcancel, okChan)
 
 	var done bool
 	for !done {
 		select {
 		case <-ctx.Done():
-			gf.log.Printf("main context finished")
+			tp.log.Printf("main context finished")
 			rcancel()
 			wcancel()
 			done = true
 		case <-rctx.Done():
-			gf.log.Printf("serial port vanished.")
+			tp.log.Printf("serial port vanished.")
 			wcancel()
 		case <-wctx.Done():
-			gf.log.Printf("gcode input stream is done")
+			tp.log.Printf("gcode input stream is done")
 			cancel()
 		}
 	}
 
-	gf.log.Printf("Print is done, returning.\n")
+	tp.log.Printf("Print is done, returning.\n")
 }
