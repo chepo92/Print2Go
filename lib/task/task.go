@@ -82,6 +82,9 @@ func (t *Task) Launch(p io.ReadWriteCloser, fh *os.File) error {
 
 	// horray for circular dependencies!
 	takoprint.Callback(t.callback)(t.tp)
+
+	// semi-empty callback to anounce that we are now active.
+	go t.callback(&takoprint.CallbackData{})
 	go t.start()
 	return nil
 }

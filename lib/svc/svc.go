@@ -49,7 +49,7 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 		svc.localUpload(w, rq)
 		return
 	}
-	if rq.URL.Path == "/api/job" {
+	if rq.URL.Path == "/api/job/status" {
 		svc.jobStatus(w, rq)
 		return
 	}

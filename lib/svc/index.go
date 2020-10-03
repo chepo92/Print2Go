@@ -68,16 +68,16 @@ Select gcode to upload:
 
 <template v-if="jobRunning">
 <div class="progress">
-  <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+  <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" :style="{width: jobDonePct + '%'}" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
 </div>
+
 Printer is currently working: {{ jobDescription }}
 <br><br>
 <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelDialog">Cancel print</button>
 
 <hr>
-<div v-for="item in jobLogBuff">
-<div>{{ item }}</div>
-</di>
+<div class="alert alert-secondary">{{ jobLastSent }}</div>
+<div class="alert alert-primary">{{ jobLastReply }}</div>
 
 
 </template>
@@ -101,20 +101,37 @@ new Vue({
   data: {
     jobRunning: false,
     jobDescription: "",
-    jobLogBuff: [],
+    jobLastSent: "-",
+    jobLastReply: "-",
+    jobDonePct: 0,
     selectedFile: "",
+    statusFp: -1,
   },
   methods: {
     loadData: function () {
-      jQuery.get('api/job', function (response) {
-        this.jobRunning = response.job != null;
-        this.jobDescription = response.status;
-        this.jobLogBuff = response.buffer;
-      }.bind(this));
+      vx = this;
+      jQuery.ajax({
+        url: 'api/job/status',
+        data: { id: vx.statusFp },
+        error: function(d) {
+          console.log("api/job/status failure, backing off...");
+          setTimeout(vx.loadData, 1000);
+        },
+        success: function(d) {
+          console.log(d);
+          vx.statusFp = d.fp;
+          vx.jobRunning = d.active;
+          vx.jobDescription = d.description;
+          vx.jobLastSent = d.lastcmd;
+          vx.jobLastReply = d.lastreply;
+          vx.jobDonePct = d.donePct;
+          setTimeout(vx.loadData, 50);
+        },
+      });
     },
     onCancelJob: function() {
       jQuery.ajax({
-        url: 'api/job',
+        url: 'api/job/cancel',
         method: 'POST',
         data: {cancel: true},
       });
@@ -152,10 +169,7 @@ new Vue({
     },
   },
   mounted: function () {
-    this.loadData();
-    setInterval(function () {
-      this.loadData();
-    }.bind(this), 800);
+    setTimeout(this.loadData, 0);
   }
 });
 </script>
