@@ -48,3 +48,8 @@ func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
 	}
 	jsonWrite(w, js)
 }
+
+func (svc *Svc) jobCancel(w http.ResponseWriter) {
+	svc.task.Cancel()
+	jsonWrite(w, nil)
+}

@@ -53,6 +53,10 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 		svc.jobStatus(w, rq)
 		return
 	}
+	if rq.URL.Path == "/api/job/cancel" {
+		svc.jobCancel(w)
+		return
+	}
 	if rq.URL.Path == "/api/gcode/action" {
 		svc.enqueueBuiltin(w, rq)
 		return
