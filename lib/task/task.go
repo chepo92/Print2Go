@@ -26,10 +26,10 @@ type TaskStatus struct {
 	Done float64
 	// Whether or not we actually do anything.
 	Active bool
-	// Last seen commands
-	LogBuffer []takoprint.CallbackData
-	// Internal fingerprint of this status message.
-	fp int64
+	// Last command we sent.
+	LastCommand string
+	// Last reply we received.
+	LastReply string
 }
 
 type Task struct {
@@ -46,10 +46,14 @@ type Task struct {
 	inputFh *os.File
 	// Status of the currently running print.
 	status TaskStatus
+	// clients subscribing to updates
+	subscribers map[string]chan TaskStatus
 }
 
 func New() *Task {
-	return &Task{}
+	return &Task{
+		subscribers: make(map[string]chan TaskStatus),
+	}
 }
 func (t *Task) Launch(p io.ReadWriteCloser, fh *os.File) error {
 	t.Lock()
@@ -71,6 +75,10 @@ func (t *Task) Launch(p io.ReadWriteCloser, fh *os.File) error {
 	t.cancel = cancel
 	t.inputFh = fh
 	t.inputStat = stat
+
+	t.status.Done = 0
+	t.status.Active = true
+	t.status.Text = "starting..."
 
 	// horray for circular dependencies!
 	takoprint.Callback(t.callback)(t.tp)
@@ -113,6 +121,7 @@ func (t *Task) nullify() {
 	t.Lock()
 	defer t.Unlock()
 
+	// nulls *most* of the struct.
 	t.tp = nil
 	t.ctx = nil
 	t.cancel = nil
@@ -122,26 +131,35 @@ func (t *Task) nullify() {
 
 // called by takoprint to update the status.
 func (t *Task) callback(d *takoprint.CallbackData) {
+	var txt string
+
 	t.Lock()
+	// notify subscribers (must happen after unlock popped from stack)
+	defer t.broadcast()
 	defer t.Unlock()
-
-	fmt.Printf(">>> Callback underway: %+v\n", d)
-	/*
-		// Keep a couple of seen replies.
-		t.logbuf = append(t.logbuf, d)
-		t.logbuf = t.logbuf[1:len(t.logbuf)]
-
-		// Try to calculate overall percentage.
-		pos, _ := t.inputFh.Seek(0, os.SEEK_CUR)
-		if sz := t.inputStat.Size(); sz > 0 {
-			t.donePercent = float64(pos) / float64(sz) * 100
-		}
-
-		// Assemble text and send it to printer on changes.
-		txt := fmt.Sprintf("%.1f%% (%s)", t.donePercent, t.inputStat.Name())
-		if txt != t.txt {
-			t.txt = txt
+	defer func() {
+		if txt != t.status.Text {
+			t.status.Text = txt
 			t.tp.Echo(txt)
 		}
-	*/
+	}()
+
+	if d == nil {
+		t.status.Active = false
+		txt = "(finished)"
+		return
+	}
+
+	// Keep a couple of seen replies.
+	t.status.LastCommand = d.LastSent
+	t.status.LastReply = d.Reply
+
+	// Try to calculate overall percentage.
+	pos, _ := t.inputFh.Seek(0, os.SEEK_CUR)
+	if sz := t.inputStat.Size(); sz > 0 {
+		t.status.Done = float64(pos) / float64(sz) * 100
+	}
+
+	// Assemble text and send it to printer on changes.
+	txt = fmt.Sprintf("%.1f%% (%s)", t.status.Done, t.inputStat.Name())
 }
