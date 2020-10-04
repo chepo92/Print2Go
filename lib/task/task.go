@@ -106,6 +106,9 @@ func (t *Task) WaitDone() <-chan struct{} {
 func (t *Task) Cancel() {
 	t.RLock()
 	defer t.RUnlock()
+	if t.cancel == nil {
+		return
+	}
 	t.cancel()
 }
 
