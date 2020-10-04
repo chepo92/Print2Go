@@ -67,7 +67,12 @@ func oneshotPrint(tty string, baud int, gcode string) {
 	}
 	defer fh.Close()
 
-	err = t.Launch(p, fh)
+	gf, err := localstore.FromFilehandle(fh)
+	if err != nil {
+		xdie("failed to open stream: %v", err)
+	}
+
+	err = t.Launch(p, gf)
 	if err != nil {
 		xdie("task setup failed: %v", err)
 	}

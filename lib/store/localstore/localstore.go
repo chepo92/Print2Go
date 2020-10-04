@@ -33,14 +33,6 @@ func (ls *LocalStore) UploadFile(path, file string, r io.ReadCloser) error {
 	return nil
 }
 
-func (ls *LocalStore) ReadFile(path, file string) (*os.File, error) {
-	path, file, err := cleanPaths(path, file)
-	if err != nil {
-		return nil, fmt.Errorf("invalid path")
-	}
-	return os.Open(filepath.Join(ls.base, path, file))
-}
-
 func cleanPaths(path, file string) (string, string, error) {
 	if path != "" {
 		path = filepath.Clean(path)

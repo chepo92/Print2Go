@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"sync"
 
+	"gitlab.com/adrian_blx/takoprint/lib/store"
 	"gitlab.com/adrian_blx/takoprint/lib/task"
-	"os"
 )
 
 type Svc struct {
@@ -20,7 +20,7 @@ type Svc struct {
 
 type FileStorage interface {
 	UploadFile(path, filename string, r io.ReadCloser) error
-	ReadFile(path, filename string) (*os.File, error)
+	ReadFile(path, filename string) (store.Stream, error)
 }
 
 func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser, error)) *Svc {

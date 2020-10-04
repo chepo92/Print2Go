@@ -2,19 +2,12 @@ package task
 
 import (
 	"context"
-	"io"
-	"os"
-	"sync"
-	"time"
-
 	"fmt"
+	"io"
+	"sync"
 
+	"gitlab.com/adrian_blx/takoprint/lib/store"
 	"gitlab.com/adrian_blx/takoprint/lib/takoprint"
-)
-
-var (
-	// Start calculating an ETA after so many minutes.
-	etaAfter = time.Duration(5 * time.Minute)
 )
 
 type TaskStatus struct {
@@ -40,10 +33,8 @@ type Task struct {
 	cancel context.CancelFunc
 	// Takoprint reference.
 	tp *takoprint.Takoprint
-	// Size of input file.
-	inputStat os.FileInfo
-	// Input filehandle.
-	inputFh *os.File
+	// Gcode input.
+	gcodeStream store.Stream
 	// Status of the currently running print.
 	status TaskStatus
 	// clients subscribing to updates
@@ -55,27 +46,20 @@ func New() *Task {
 		subscribers: make(map[string]chan TaskStatus),
 	}
 }
-func (t *Task) Launch(p io.ReadWriteCloser, fh *os.File) error {
+
+func (t *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	t.Lock()
 	defer t.Unlock()
 
-	if t.inputFh != nil {
+	if t.gcodeStream != nil {
 		return fmt.Errorf("task already running")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-
-	stat, err := fh.Stat()
-	if err != nil {
-		return fmt.Errorf("stat failed: %v", err)
-	}
-
-	t.tp = takoprint.New(p, fh)
+	t.tp = takoprint.New(p, gcs)
 	t.ctx = ctx
 	t.cancel = cancel
-	t.inputFh = fh
-	t.inputStat = stat
-
+	t.gcodeStream = gcs
 	t.status.Done = 0
 	t.status.Active = true
 	t.status.Text = "starting..."
@@ -131,8 +115,7 @@ func (t *Task) nullify() {
 	t.tp = nil
 	t.ctx = nil
 	t.cancel = nil
-	t.inputFh = nil
-	t.inputStat = nil
+	t.gcodeStream = nil
 }
 
 // called by takoprint to update the status.
@@ -160,12 +143,10 @@ func (t *Task) callback(d *takoprint.CallbackData) {
 	t.status.LastCommand = d.LastSent
 	t.status.LastReply = d.Reply
 
-	// Try to calculate overall percentage.
-	pos, _ := t.inputFh.Seek(0, os.SEEK_CUR)
-	if sz := t.inputStat.Size(); sz > 0 {
-		t.status.Done = float64(pos) / float64(sz) * 100
+	if sz := t.gcodeStream.Size(); sz > 0 {
+		t.status.Done = float64(t.gcodeStream.Pos()) / float64(sz) * 100
 	}
 
 	// Assemble text and send it to printer on changes.
-	txt = fmt.Sprintf("%.1f%% (%s)", t.status.Done, t.inputStat.Name())
+	txt = fmt.Sprintf("%.1f%% (%s)", t.status.Done, t.gcodeStream.Name())
 }
