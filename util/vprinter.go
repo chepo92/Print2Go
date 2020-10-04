@@ -24,7 +24,7 @@ func main() {
 	s := bufio.NewScanner(fh)
 	for s.Scan() {
 		fmt.Printf(">> %s\n", s.Text())
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 250)
 		fh.Write([]byte("ok\n"))
 	}
 }
