@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	flagTTY = flag.String("tty", "/tmp/virtual-tty", "path to tty")
+	flagTTY = flag.String("tty", "/tmp/virtual-tty-2", "path to tty")
 )
 
 func main() {
