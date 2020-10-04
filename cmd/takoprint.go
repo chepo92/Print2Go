@@ -1,16 +1,14 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"time"
 
+	"gitlab.com/adrian_blx/takoprint/lib/serial"
 	"gitlab.com/adrian_blx/takoprint/lib/store/localstore"
 	"gitlab.com/adrian_blx/takoprint/lib/svc"
 	"gitlab.com/adrian_blx/takoprint/lib/task"
@@ -31,14 +29,21 @@ func main() {
 		xdie("-tty must be specified")
 	}
 	if *flagGcode != "" {
-		oneshotPrint(*flagTTY, *flagGcode)
+		oneshotPrint(*flagTTY, *flagBaud, *flagGcode)
+		return
+	}
+
+	if os.Args[len(os.Args)-1] == ":serial-pipe" {
+		serial.RunPipe(*flagTTY, uint(*flagBaud))
 		return
 	}
 
 	srv := &http.Server{
 		Addr: *flagListen,
 	}
-	s := svc.New(srv, localstore.New(*flagStorage), serialPort(*flagTTY))
+
+	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
+	s := svc.New(srv, localstore.New(*flagStorage), spf)
 	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(); err != nil {
 		xdie("server exited: %v", err)
@@ -46,11 +51,11 @@ func main() {
 }
 
 // oneshotPrint just prints the specified gcode file.
-func oneshotPrint(tty, gcode string) {
+func oneshotPrint(tty string, baud int, gcode string) {
 	log.Printf("Printing '%s' on %s\n", gcode, tty)
 
 	t := task.New()
-	p, err := serialPort(tty)()
+	p, err := serial.NewSerialPortFunc(tty, baud)()
 	if err != nil {
 		xdie("failed to attach serial port: %v", err)
 	}
@@ -71,52 +76,6 @@ func oneshotPrint(tty, gcode string) {
 		time.Sleep(time.Second)
 		log.Printf("working...\n")
 	}
-}
-
-type SerialPort struct {
-	context context.Context
-	cancel  context.CancelFunc
-	stdout  io.ReadCloser
-	stdin   io.WriteCloser
-}
-
-func serialPort(tty string) func() (io.ReadWriteCloser, error) {
-	return func() (io.ReadWriteCloser, error) {
-		ctx, cancel := context.WithCancel(context.Background())
-		fmt.Printf("> FIXME: BAUD RATE\n")
-		cmd := exec.CommandContext(ctx, "socat", tty, "-")
-
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return nil, err
-		}
-		stdin, err := cmd.StdinPipe()
-		if err != nil {
-			return nil, err
-		}
-
-		return &SerialPort{
-			context: ctx,
-			cancel:  cancel,
-			stdin:   stdin,
-			stdout:  stdout,
-		}, cmd.Start()
-	}
-}
-
-func (sp *SerialPort) Close() error {
-	sp.cancel()
-	sp.stdin.Close()
-	sp.stdout.Close()
-	return nil
-}
-
-func (sp *SerialPort) Write(b []byte) (int, error) {
-	return sp.stdin.Write(b)
-}
-
-func (sp *SerialPort) Read(b []byte) (int, error) {
-	return sp.stdout.Read(b)
 }
 
 func xdie(f string, args ...interface{}) {
