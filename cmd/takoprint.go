@@ -31,30 +31,32 @@ func main() {
 		xdie("-tty must be specified")
 	}
 	if *flagGcode != "" {
-		oneshotPrint()
+		oneshotPrint(*flagTTY, *flagGcode)
 		return
 	}
 
 	srv := &http.Server{
 		Addr: *flagListen,
 	}
-
-	s := svc.New(srv, localstore.New(*flagStorage), serialPort)
+	s := svc.New(srv, localstore.New(*flagStorage), serialPort(*flagTTY))
+	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(); err != nil {
 		xdie("server exited: %v", err)
 	}
 }
 
-func oneshotPrint() {
-	log.Printf("Printing '%s' on %s\n", *flagGcode, *flagTTY)
+// oneshotPrint just prints the specified gcode file.
+func oneshotPrint(tty, gcode string) {
+	log.Printf("Printing '%s' on %s\n", gcode, tty)
+
 	t := task.New()
-	p, err := serialPort()
+	p, err := serialPort(tty)()
 	if err != nil {
 		xdie("failed to attach serial port: %v", err)
 	}
 	defer p.Close()
 
-	fh, err := os.Open(*flagGcode)
+	fh, err := os.Open(gcode)
 	if err != nil {
 		xdie("failed to open gcode: %v", err)
 	}
@@ -78,26 +80,28 @@ type SerialPort struct {
 	stdin   io.WriteCloser
 }
 
-func serialPort() (io.ReadWriteCloser, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	fmt.Printf("> FIXME: BAUD RATE\n")
-	cmd := exec.CommandContext(ctx, "socat", *flagTTY, "-")
+func serialPort(tty string) func() (io.ReadWriteCloser, error) {
+	return func() (io.ReadWriteCloser, error) {
+		ctx, cancel := context.WithCancel(context.Background())
+		fmt.Printf("> FIXME: BAUD RATE\n")
+		cmd := exec.CommandContext(ctx, "socat", tty, "-")
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, err
-	}
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return nil, err
+		}
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			return nil, err
+		}
 
-	return &SerialPort{
-		context: ctx,
-		cancel:  cancel,
-		stdin:   stdin,
-		stdout:  stdout,
-	}, cmd.Start()
+		return &SerialPort{
+			context: ctx,
+			cancel:  cancel,
+			stdin:   stdin,
+			stdout:  stdout,
+		}, cmd.Start()
+	}
 }
 
 func (sp *SerialPort) Close() error {
