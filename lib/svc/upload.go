@@ -47,13 +47,19 @@ func (svc *Svc) localUpload(w http.ResponseWriter, rq *http.Request) {
 		},
 		Done: true,
 	}
-	//	w.Header().Set("Location", "todo: management url")
+
 	jsonWrite(w, reply)
 
 	if rq.FormValue("print") == "true" {
 		svc.log("Enqueueing %s, %s for printing after upload", path, h.Filename)
-		if err := svc.enqueuePrint(path, h.Filename); err != nil {
+		instr, err := svc.storage.ReadFile(path, h.Filename)
+		if err != nil {
+			svc.log("failed to read file we just uploaded: %v", err)
+			return
+		}
+		if err := svc.enqueuePrint(instr); err != nil {
 			svc.log("enqueueing failed: %v", err)
+			return
 		}
 	}
 }

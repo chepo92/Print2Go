@@ -1,10 +1,10 @@
 package svc
 
 import (
-	"bytes"
-	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"gitlab.com/adrian_blx/takoprint/lib/store/bufstore"
 )
 
 var gCodes = map[string][]string{
@@ -46,13 +46,9 @@ func (svc *Svc) enqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
 		return
 	}
 
-	code := ioutil.NopCloser(bytes.NewReader([]byte(strings.Join(pl, "\n") + "\n")))
-	if err := svc.storage.UploadFile("internal", "gcode-"+q, code); err != nil {
-		svc.error(w, "error writing gcode file")
-		return
-	}
-
-	if err := svc.enqueuePrint("internal", "gcode-"+q); err != nil {
+	code := []byte(strings.Join(pl, "\n") + "\n")
+	instr := bufstore.New(code, q)
+	if err := svc.enqueuePrint(instr); err != nil {
 		svc.error(w, "error executing internal gcode")
 	}
 }
