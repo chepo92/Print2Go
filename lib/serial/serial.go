@@ -36,10 +36,9 @@ func RunPipe(tty string, baud uint) {
 }
 
 type SerialPort struct {
-	context context.Context
-	cancel  context.CancelFunc
 	stdout  io.ReadCloser
 	stdin   io.WriteCloser
+	cleanup func()
 }
 
 func NewSerialPortFunc(tty string, baud int) func() (io.ReadWriteCloser, error) {
@@ -58,18 +57,20 @@ func NewSerialPortFunc(tty string, baud int) func() (io.ReadWriteCloser, error) 
 		}
 
 		return &SerialPort{
-			context: ctx,
-			cancel:  cancel,
-			stdin:   stdin,
-			stdout:  stdout,
+			stdin:  stdin,
+			stdout: stdout,
+			cleanup: func() {
+				cancel()
+				stdin.Close()
+				stdout.Close()
+				cmd.Wait()
+			},
 		}, cmd.Start()
 	}
 }
 
 func (sp *SerialPort) Close() error {
-	sp.cancel()
-	sp.stdin.Close()
-	sp.stdout.Close()
+	sp.cleanup()
 	return nil
 }
 
