@@ -18,12 +18,13 @@ func (svc *Svc) indexPage(w http.ResponseWriter) {
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
 
-        <title>takoprint status</title>
+        <title>Takoprint status</title>
     </head>
     <body>
 <div class="container" id="app">
 <br>
 
+<!-- modal dialog to cancel the currently ongoing job -->
 <div class="modal fade" id="cancelDialog" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -44,6 +45,7 @@ Do you really want to cancel the ongoing print?
   </div>
 </div>
 
+<!-- modal upload dialog -->
 <div class="modal fade" id="uploadDialog" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -66,18 +68,25 @@ Select gcode to upload:
 </div>
 
 
-<template v-if="jobRunning">
+<template v-if="viewJobStatus">
 <div class="progress">
-  <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" :style="{width: jobDonePct + '%'}" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
+  <div class="progress-bar" role="progressbar" :style="{width: jobStatus.donePct + '%'}" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
 </div>
 
-Printer is currently working: {{ jobDescription }}
+<template v-if="jobStatus.active">
+Printer is currently working: {{ jobStatus.description }}
 <br><br>
 <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelDialog">Cancel print</button>
+</template>
+<template v-else>
+<b>Printer finished</b>: {{ jobStatus.description }}
+<br><br>
+<button type="button" class="btn btn-secondary" v-on:click="viewJobStatus=false">Dismiss</button>
+</template>
 
 <hr>
-<div class="alert alert-secondary">{{ jobLastSent }}</div>
-<div class="alert alert-primary">{{ jobLastReply }}</div>
+<div class="alert alert-secondary">{{ jobStatus.lastcmd }}</div>
+<div class="alert alert-primary">{{ jobStatus.lastreply }}</div>
 
 
 </template>
@@ -99,11 +108,8 @@ Printer is currently working: {{ jobDescription }}
 new Vue({
   el: '#app',
   data: {
-    jobRunning: false,
-    jobDescription: "",
-    jobLastSent: "-",
-    jobLastReply: "-",
-    jobDonePct: 0,
+    jobStatus: {},
+    viewJobStatus: false,
     selectedFile: "",
     statusFp: -1,
   },
@@ -118,13 +124,11 @@ new Vue({
           setTimeout(vx.loadData, 1000);
         },
         success: function(d) {
-          console.log(d);
+          vx.jobStatus = d;
           vx.statusFp = d.fp;
-          vx.jobRunning = d.active;
-          vx.jobDescription = d.description;
-          vx.jobLastSent = d.lastcmd;
-          vx.jobLastReply = d.lastreply;
-          vx.jobDonePct = d.donePct;
+          if (d.active == true) {
+            vx.viewJobStatus = true;
+          }
           setTimeout(vx.loadData, 50);
         },
       });
