@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"gitlab.com/adrian_blx/takoprint/lib/camera"
 	"gitlab.com/adrian_blx/takoprint/lib/serial"
 	"gitlab.com/adrian_blx/takoprint/lib/store/localstore"
 	"gitlab.com/adrian_blx/takoprint/lib/svc"
@@ -35,6 +36,10 @@ func main() {
 
 	if os.Args[len(os.Args)-1] == ":serial-pipe" {
 		serial.RunPipe(*flagTTY, uint(*flagBaud))
+		return
+	}
+	if os.Args[len(os.Args)-1] == ":camera-pipe" {
+		camera.RunPipe("/dev/video0", 640, 480)
 		return
 	}
 

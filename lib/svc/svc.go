@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 
+	"gitlab.com/adrian_blx/takoprint/lib/camera"
 	"gitlab.com/adrian_blx/takoprint/lib/store"
 	"gitlab.com/adrian_blx/takoprint/lib/task"
 )
@@ -14,6 +15,7 @@ type Svc struct {
 	sync.RWMutex
 	srv        *http.Server
 	storage    FileStorage
+	camera     *camera.Camera
 	task       *task.Task
 	serialPort func() (io.ReadWriteCloser, error)
 }
@@ -28,6 +30,7 @@ func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser,
 		srv:        srv,
 		storage:    store,
 		serialPort: serial,
+		camera:     camera.New(),
 		task:       task.New(),
 	}
 	mux := http.NewServeMux()
@@ -59,6 +62,10 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	}
 	if rq.URL.Path == "/api/gcode/action" {
 		svc.enqueueBuiltin(w, rq)
+		return
+	}
+	if rq.URL.Path == "/camera/stream.mjpeg" {
+		svc.camera.WriteStream(w)
 		return
 	}
 	if rq.URL.Path == "/" {
