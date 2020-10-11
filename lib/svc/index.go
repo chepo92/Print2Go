@@ -1,11 +1,21 @@
 package svc
 
 import (
+	"html/template"
 	"net/http"
+	"os"
 )
 
 func (svc *Svc) indexPage(w http.ResponseWriter) {
-	x := `<!DOCTYPE html>
+	hn, err := os.Hostname()
+	if err != nil {
+		hn = "<unknown>"
+	}
+
+	indexTmpl.Execute(w, struct{ Hostname string }{Hostname: hn})
+}
+
+var indexTmpl = template.Must(template.New("index").Delims("[[", "]]").Parse(`<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -23,9 +33,9 @@ func (svc *Svc) indexPage(w http.ResponseWriter) {
     <body>
 
 <nav class="navbar navbar-dark bg-dark">
-  <span class="navbar-brand">Takoprint</span>
+  <span class="navbar-brand">Takoprint @ [[ .Hostname ]]</span>
     <span class="navbar-text">
-      <a href="#" onclick="window.open('camera', 'takocam', 'width=900,height=900')">Webcam</a>
+      <a href="#" onclick="window.open('camera', 'takocam', 'width=800,height=500')">Webcam</a>
     </span>
 </nav>
 
@@ -187,6 +197,4 @@ new Vue({
 </script>
 </body>
 </html>
-`
-	w.Write([]byte(x))
-}
+`))
