@@ -44,39 +44,26 @@ func (svc *Svc) Run() error {
 }
 
 func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
-	if rq.URL.Path == "/api/version" {
+	switch rq.URL.Path {
+	case "/api/version":
 		svc.versionReply(w, rq)
-		return
-	}
-	if rq.URL.Path == "/api/files/local" && rq.Method == "POST" {
+	case "/api/files/local":
 		svc.localUpload(w, rq)
-		return
-	}
-	if rq.URL.Path == "/api/job/status" {
+	case "/api/job/status":
 		svc.jobStatus(w, rq)
-		return
-	}
-	if rq.URL.Path == "/api/job/cancel" {
+	case "/api/job/cancel":
 		svc.jobCancel(w)
-		return
-	}
-	if rq.URL.Path == "/api/gcode/action" {
+	case "/api/gcode/action":
 		svc.enqueueBuiltin(w, rq)
-		return
-	}
-	if rq.URL.Path == "/camera" {
+	case "/camera":
 		svc.cameraPage(w)
-		return
-	}
-	if rq.URL.Path == "/camera/stream.mjpeg" {
+	case "/camera/stream.mjpeg":
 		svc.camera.WriteStream(w)
-		return
-	}
-	if rq.URL.Path == "/" {
+	case "/":
 		svc.indexPage(w)
-		return
+	default:
+		http.Error(w, "unknown url", 404)
 	}
-	http.Error(w, "unknown url", 404)
 }
 
 func jsonWrite(w http.ResponseWriter, msg interface{}) {
