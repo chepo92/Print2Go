@@ -21,6 +21,14 @@ func (svc *Svc) indexPage(w http.ResponseWriter) {
         <title>Takoprint status</title>
     </head>
     <body>
+
+<nav class="navbar navbar-dark bg-dark">
+  <span class="navbar-brand">Takoprint</span>
+    <span class="navbar-text">
+      <a href="#" onclick="window.open('camera', 'takocam', 'width=900,height=900')">Webcam</a>
+    </span>
+</nav>
+
 <div class="container" id="app">
 <br>
 

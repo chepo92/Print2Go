@@ -64,6 +64,10 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 		svc.enqueueBuiltin(w, rq)
 		return
 	}
+	if rq.URL.Path == "/camera" {
+		svc.cameraPage(w)
+		return
+	}
 	if rq.URL.Path == "/camera/stream.mjpeg" {
 		svc.camera.WriteStream(w)
 		return
