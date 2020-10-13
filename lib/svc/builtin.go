@@ -48,7 +48,7 @@ func (svc *Svc) enqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
 
 	code := []byte(strings.Join(pl, "\n") + "\n")
 	instr := bufstore.New(code, q)
-	if err := svc.enqueuePrint(instr); err != nil {
+	if err := svc.enqueuePrint(instr, false); err != nil {
 		svc.error(w, "error executing internal gcode")
 	}
 }

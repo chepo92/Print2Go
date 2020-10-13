@@ -2,11 +2,16 @@ package svc
 
 import (
 	"fmt"
+	"time"
 
 	"gitlab.com/adrian_blx/takoprint/lib/store"
 )
 
-func (svc *Svc) enqueuePrint(instr store.Stream) error {
+var (
+	minRuntime = 3 * time.Minute
+)
+
+func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
 	s, err := svc.serialPort()
 	if err != nil {
 		instr.Close()
@@ -20,6 +25,8 @@ func (svc *Svc) enqueuePrint(instr store.Stream) error {
 	}
 
 	go func() {
+		started := time.Now()
+
 		svc.log("task enqueued")
 		<-svc.task.WaitDone()
 		instr.Close()
@@ -27,6 +34,14 @@ func (svc *Svc) enqueuePrint(instr store.Stream) error {
 			panic(err)
 		}
 		svc.log("task done!")
+
+		if shutdown {
+			if time.Now().Sub(started) > minRuntime {
+				svc.shutdown()
+			} else {
+				svc.log("ignoring shutdown as we didn't run for at least %s", minRuntime)
+			}
+		}
 	}()
 	return nil
 }

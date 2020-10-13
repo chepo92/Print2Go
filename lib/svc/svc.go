@@ -18,6 +18,8 @@ type Svc struct {
 	camera     *camera.Camera
 	task       *task.Task
 	serialPort func() (io.ReadWriteCloser, error)
+	// function we execute if hardware should be shut down.
+	shutdown func()
 }
 
 type FileStorage interface {
@@ -25,11 +27,12 @@ type FileStorage interface {
 	ReadFile(path, filename string) (store.Stream, error)
 }
 
-func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser, error)) *Svc {
+func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *Svc {
 	svc := &Svc{
 		srv:        srv,
 		storage:    store,
 		serialPort: serial,
+		shutdown:   shutdown,
 		camera:     camera.New(),
 		task:       task.New(),
 	}

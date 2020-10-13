@@ -75,7 +75,15 @@ Do you really want to cancel the ongoing print?
       </div>
       <div class="modal-body">
 Select gcode to upload:
+<br>
     <input type="file" @change="onGcodeFileSelected" />
+<br>
+<br>
+  <div class="form-check">
+    <input type="checkbox" class="form-check-input" id="runShutdownScript" checked>
+    <label class="form-check-label" for="runShutdownScript">Run shutdown script after completion</label>
+  </div>
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -170,6 +178,7 @@ new Vue({
     onGcodeStartUpload: function() {
       var data = new FormData();
       data.append("print", true);
+      data.append("shutdown", $("#runShutdownScript").is(":checked"));
       data.append("file", this.selectedFile);
       this.selectedFile = "";
       jQuery.ajax({

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"time"
 
 	"gitlab.com/adrian_blx/takoprint/lib/camera"
@@ -16,11 +17,12 @@ import (
 )
 
 var (
-	flagTTY     = flag.String("tty", "/dev/ttyUSB0", "tty to use")
-	flagBaud    = flag.Int("baud", 115200, "baud rate of -port")
-	flagGcode   = flag.String("gcode", "", "file containing gcode")
-	flagListen  = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
-	flagStorage = flag.String("storage", "/tmp/takoprint", "path to store gcode in")
+	flagTTY      = flag.String("tty", "/dev/ttyUSB0", "tty to use")
+	flagBaud     = flag.Int("baud", 115200, "baud rate of -port")
+	flagGcode    = flag.String("gcode", "", "file containing gcode")
+	flagListen   = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
+	flagStorage  = flag.String("storage", "/tmp/takoprint", "path to store gcode in")
+	flagShutdown = flag.String("shutdown-script", "/usr/lib/takoprint-shutdown.sh", "script to execute to shutdown the printer")
 )
 
 func main() {
@@ -48,7 +50,7 @@ func main() {
 	}
 
 	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
-	s := svc.New(srv, localstore.New(*flagStorage), spf)
+	s := svc.New(srv, localstore.New(*flagStorage), spf, shutdownFunc(*flagShutdown))
 	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(); err != nil {
 		xdie("server exited: %v", err)
@@ -85,6 +87,20 @@ func oneshotPrint(tty string, baud int, gcode string) {
 	for !t.Done() {
 		time.Sleep(time.Second)
 		log.Printf("working...\n")
+	}
+}
+
+func shutdownFunc(script string) func() {
+	return func() {
+		if len(script) == 0 {
+			return
+		}
+		fmt.Printf("# shutdown: executing '%s'\n", script)
+		cmd := exec.Command(script)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		rv := cmd.Run()
+		fmt.Printf("# exited with: %v\n", rv)
 	}
 }
 

@@ -51,13 +51,15 @@ func (svc *Svc) localUpload(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, reply)
 
 	if rq.FormValue("print") == "true" {
-		svc.log("Enqueueing %s, %s for printing after upload", path, h.Filename)
+		shutdown := rq.FormValue("shutdown") == "true"
+
+		svc.log("Enqueueing %s, %s for printing after upload. Shutdown = %v", path, h.Filename, shutdown)
 		instr, err := svc.storage.ReadFile(path, h.Filename)
 		if err != nil {
 			svc.log("failed to read file we just uploaded: %v", err)
 			return
 		}
-		if err := svc.enqueuePrint(instr); err != nil {
+		if err := svc.enqueuePrint(instr, shutdown); err != nil {
 			svc.log("enqueueing failed: %v", err)
 			return
 		}
