@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"gitlab.com/adrian_blx/takoprint/lib/store"
 	"gitlab.com/adrian_blx/takoprint/lib/takoprint"
@@ -19,6 +20,8 @@ type TaskStatus struct {
 	Done float64
 	// Whether or not we actually do anything.
 	Active bool
+	// Time we started this print
+	Started time.Time
 	// Last command we sent.
 	LastCommand string
 	// Last reply we received.
@@ -63,6 +66,7 @@ func (t *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	t.status.Done = 0
 	t.status.Active = true
 	t.status.Text = "starting..."
+	t.status.Started = time.Now()
 
 	// horray for circular dependencies!
 	takoprint.Callback(t.callback)(t.tp)

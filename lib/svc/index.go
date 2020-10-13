@@ -92,7 +92,7 @@ Select gcode to upload:
 </div>
 
 <template v-if="jobStatus.active">
-Printer is currently working: {{ jobStatus.description }}
+Printer is working on: {{ jobStatus.description }}
 <br><br>
 <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelDialog">Cancel print</button>
 </template>
@@ -105,7 +105,7 @@ Printer is currently working: {{ jobStatus.description }}
 <hr>
 <div class="alert alert-secondary">{{ jobStatus.lastcmd }}</div>
 <div class="alert alert-primary">{{ jobStatus.lastreply }}</div>
-
+<div class="alert alert-light">Job is running since {{ jobStatus.runDuration }}.</div>
 
 </template>
 <template v-else>

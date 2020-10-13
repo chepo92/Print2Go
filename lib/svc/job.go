@@ -9,13 +9,15 @@ import (
 )
 
 type jobStatus struct {
-	File   string  `json:"file"`
-	Done   float64 `json:"donePct"`
-	Desc   string  `json:"description"`
-	Cmd    string  `json:"lastcmd"`
-	Reply  string  `json:"lastreply"`
-	Active bool    `json:"active"`
-	Hash   uint32  `json:"fp"`
+	File        string        `json:"file"`
+	Done        float64       `json:"donePct"`
+	Desc        string        `json:"description"`
+	Cmd         string        `json:"lastcmd"`
+	Reply       string        `json:"lastreply"`
+	Active      bool          `json:"active"`
+	Hash        uint32        `json:"fp"`
+	Age         time.Duration `json:"ageSecs"`
+	RunDuration string        `json:"runDuration"`
 }
 
 func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
@@ -30,13 +32,16 @@ func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
 		select {
 		case <-time.After(time.Second * 20):
 		case v := <-c:
+			runDur := time.Now().Sub(v.Started)
 			js = jobStatus{
-				File:   v.File,
-				Done:   v.Done,
-				Desc:   v.Text,
-				Cmd:    v.LastCommand,
-				Reply:  v.LastReply,
-				Active: v.Active,
+				File:        v.File,
+				Done:        v.Done,
+				Desc:        v.Text,
+				Cmd:         v.LastCommand,
+				Reply:       v.LastReply,
+				Active:      v.Active,
+				Age:         runDur / time.Second,
+				RunDuration: runDur.Round(time.Second).String(),
 			}
 			h := fnv.New32a()
 			h.Write([]byte(fmt.Sprintf("%+v", js)))
