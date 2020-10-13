@@ -37,6 +37,9 @@ func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
 
 		if shutdown {
 			if time.Now().Sub(started) > minRuntime {
+				// give printer some time to cool down.
+				svc.log("shutting printer down in 20 sec...")
+				time.Sleep(time.Second * 20)
 				svc.shutdown()
 			} else {
 				svc.log("ignoring shutdown as we didn't run for at least %s", minRuntime)
