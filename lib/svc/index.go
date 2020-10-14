@@ -63,6 +63,27 @@ Do you really want to cancel the ongoing print?
   </div>
 </div>
 
+<!-- modal dialog to cancel the currently ongoing job -->
+<div class="modal fade" id="confirmShutdownDialog" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Shutdown printer</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+Do you really want to <b>shutdown the device?</b>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" v-on:click="onShutdownConfirmed" data-dismiss="modal">Yes, shutdown!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- modal upload dialog -->
 <div class="modal fade" id="uploadDialog" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -125,6 +146,7 @@ Printer is working on: {{ jobStatus.description }}
 <li class="list-group-item"><button v-on:click="onBuiltinGcode('heat')" type="button" class="btn btn-primary">Heat extruder</button></li>
 <li class="list-group-item"><button v-on:click="onBuiltinGcode('f-move')" type="button" class="btn btn-primary">Move filament</button></li>
 <li class="list-group-item"><button v-on:click="onBuiltinGcode('reset')" type="button" class="btn btn-primary">Reset printer</button></li>
+<li class="list-group-item"><button data-toggle="modal" data-target="#confirmShutdownDialog" type="button" class="btn btn-danger">Run shutdown script</button></li>
 </ul>
 </template>
 
@@ -164,6 +186,12 @@ new Vue({
         url: 'api/job/cancel',
         method: 'POST',
         data: {cancel: true},
+      });
+    },
+    onShutdownConfirmed: function() {
+      jQuery.ajax({
+        url: 'api/device/shutdown',
+        method: 'POST',
       });
     },
     onBuiltinGcode: function(arg) {

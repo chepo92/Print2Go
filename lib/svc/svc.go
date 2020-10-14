@@ -58,6 +58,8 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 		svc.jobCancel(w)
 	case "/api/gcode/action":
 		svc.enqueueBuiltin(w, rq)
+	case "/api/device/shutdown":
+		svc.shutdown()
 	case "/camera":
 		svc.cameraPage(w)
 	case "/camera/stream.mjpeg":
