@@ -87,6 +87,10 @@ func (t *Task) Done() bool {
 func (t *Task) WaitDone() <-chan struct{} {
 	t.RLock()
 	defer t.RUnlock()
+
+	if t.ctx == nil {
+		return nil
+	}
 	return t.ctx.Done()
 }
 

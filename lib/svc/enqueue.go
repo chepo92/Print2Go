@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	minRuntime = 3 * time.Minute
+	minRuntime       = 3 * time.Minute
+	emergencyTimeout = 15 * time.Minute
 )
 
 func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
@@ -23,6 +24,8 @@ func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
 		s.Close()
 		return fmt.Errorf("failed to launch new task: %v", err)
 	}
+
+	go svc.emergencyWatchdog()
 
 	go func() {
 		started := time.Now()
@@ -47,4 +50,24 @@ func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
 		}
 	}()
 	return nil
+}
+
+// emergencyWatchdog subscribes to the printer feed and initiates a shutdown if the print appears to be stalled.
+func (svc *Svc) emergencyWatchdog() {
+	sub := svc.task.Subscribe()
+	defer svc.task.Unsubscribe(sub)
+
+	for {
+		select {
+		case <-sub:
+			// still alive.
+		case <-svc.task.WaitDone():
+			// print finished.
+			return
+		case <-time.After(emergencyTimeout):
+			svc.log("*** EMERGENCY SHUTDOWN ***: printer forze for %s", emergencyTimeout)
+			svc.shutdown()
+			return
+		}
+	}
 }
