@@ -9,7 +9,7 @@ import (
 
 var (
 	minRuntime       = 3 * time.Minute
-	emergencyTimeout = 15 * time.Minute
+	emergencyTimeout = 5 * time.Minute
 )
 
 func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
