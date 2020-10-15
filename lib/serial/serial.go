@@ -1,26 +1,25 @@
 package serial
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
-
-	"context"
-	"github.com/jacobsa/go-serial/serial"
 	"os/exec"
+
+	"github.com/tarm/serial"
 )
 
 // RunPipe opens the supplied tty and pipes data between it and stdin/stdout.
-func RunPipe(tty string, baud uint) {
-	p, err := serial.Open(serial.OpenOptions{
-		PortName:        tty,
-		BaudRate:        baud,
-		StopBits:        1,
-		DataBits:        8,
-		MinimumReadSize: 1,
+func RunPipe(tty string, baud int) {
+	p, err := serial.OpenPort(&serial.Config{
+		Name:     tty,
+		Baud:     baud,
+		Size:     8,
+		StopBits: 1,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open serial port: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to open serial port %s: %v\n", tty, err)
 		os.Exit(1)
 	}
 

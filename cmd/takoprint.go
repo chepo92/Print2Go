@@ -37,7 +37,7 @@ func main() {
 	}
 
 	if os.Args[len(os.Args)-1] == ":serial-pipe" {
-		serial.RunPipe(*flagTTY, uint(*flagBaud))
+		serial.RunPipe(*flagTTY, *flagBaud)
 		return
 	}
 	if os.Args[len(os.Args)-1] == ":camera-pipe" {
