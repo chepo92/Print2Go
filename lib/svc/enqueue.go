@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"gitlab.com/adrian_blx/takoprint/lib/config"
 	"gitlab.com/adrian_blx/takoprint/lib/store"
-)
-
-var (
-	minRuntime       = 3 * time.Minute
-	emergencyTimeout = 5 * time.Minute
 )
 
 func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
@@ -39,13 +35,13 @@ func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {
 		svc.log("task done!")
 
 		if shutdown {
-			if time.Now().Sub(started) > minRuntime {
+			if time.Now().Sub(started) > config.MinRunTimeForShutdown {
 				// give printer some time to cool down.
 				svc.log("shutting printer down in 20 sec...")
 				time.Sleep(time.Second * 20)
 				svc.shutdown()
 			} else {
-				svc.log("ignoring shutdown as we didn't run for at least %s", minRuntime)
+				svc.log("ignoring shutdown as we didn't run for at least %s", config.MinRunTimeForShutdown)
 			}
 		}
 	}()
@@ -64,8 +60,8 @@ func (svc *Svc) emergencyWatchdog() {
 		case <-svc.task.WaitDone():
 			// print finished.
 			return
-		case <-time.After(emergencyTimeout):
-			svc.log("*** EMERGENCY SHUTDOWN ***: printer forze for %s", emergencyTimeout)
+		case <-time.After(config.EmergencyStallTimeout):
+			svc.log("*** EMERGENCY SHUTDOWN ***: printer forze for %s", config.EmergencyStallTimeout)
 			svc.shutdown()
 			return
 		}
