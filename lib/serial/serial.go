@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 
 	"github.com/tarm/serial"
 )
@@ -23,8 +25,11 @@ func RunPipe(tty string, baud int) {
 		os.Exit(1)
 	}
 
-	done := make(chan error)
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, syscall.SIGUSR1)
+	go handleSignals(sigs, p)
 
+	done := make(chan error)
 	go func() { _, err := io.Copy(p, os.Stdin); done <- err }()
 	go func() { _, err := io.Copy(os.Stdout, p); done <- err }()
 	if err := <-done; err != nil {
@@ -65,6 +70,19 @@ func NewSerialPortFunc(tty string, baud int) func() (io.ReadWriteCloser, error) 
 				cmd.Wait()
 			},
 		}, cmd.Start()
+	}
+}
+
+// Escape hatch for stalled prints: signals can be used to send a command to the printer or pretend that we received an OK.
+func handleSignals(s <-chan os.Signal, w io.Writer) {
+	for sig := range s {
+		switch sig {
+		case syscall.SIGUSR1:
+			// send 'ok' back to takoprint.
+			fmt.Fprintf(os.Stdout, "ok\n")
+		default:
+			// unhandled.
+		}
 	}
 }
 
