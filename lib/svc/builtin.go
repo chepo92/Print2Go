@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"gitlab.com/adrian_blx/takoprint/lib/store/bufstore"
+	"git.sr.ht/~adrian-blx/takoprint/lib/store/bufstore"
 )
 
 var gCodes = map[string][]string{

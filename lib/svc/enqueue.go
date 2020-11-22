@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/adrian_blx/takoprint/lib/config"
-	"gitlab.com/adrian_blx/takoprint/lib/store"
+	"git.sr.ht/~adrian-blx/takoprint/lib/config"
+	"git.sr.ht/~adrian-blx/takoprint/lib/store"
 )
 
 func (svc *Svc) enqueuePrint(instr store.Stream, shutdown bool) error {

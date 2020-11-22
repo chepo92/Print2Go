@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"sync"
 
-	"gitlab.com/adrian_blx/takoprint/lib/camera"
-	"gitlab.com/adrian_blx/takoprint/lib/store"
-	"gitlab.com/adrian_blx/takoprint/lib/task"
+	"git.sr.ht/~adrian-blx/takoprint/lib/camera"
+	"git.sr.ht/~adrian-blx/takoprint/lib/store"
+	"git.sr.ht/~adrian-blx/takoprint/lib/task"
 )
 
 type Svc struct {

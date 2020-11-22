@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	"gitlab.com/adrian_blx/takoprint/lib/chanreader"
+	"git.sr.ht/~adrian-blx/takoprint/lib/chanreader"
 )
 
 type Takoprint struct {

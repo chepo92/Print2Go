@@ -9,11 +9,11 @@ import (
 	"os/exec"
 	"time"
 
-	"gitlab.com/adrian_blx/takoprint/lib/camera"
-	"gitlab.com/adrian_blx/takoprint/lib/serial"
-	"gitlab.com/adrian_blx/takoprint/lib/store/localstore"
-	"gitlab.com/adrian_blx/takoprint/lib/svc"
-	"gitlab.com/adrian_blx/takoprint/lib/task"
+	"git.sr.ht/~adrian-blx/takoprint/lib/camera"
+	"git.sr.ht/~adrian-blx/takoprint/lib/serial"
+	"git.sr.ht/~adrian-blx/takoprint/lib/store/localstore"
+	"git.sr.ht/~adrian-blx/takoprint/lib/svc"
+	"git.sr.ht/~adrian-blx/takoprint/lib/task"
 )
 
 var (

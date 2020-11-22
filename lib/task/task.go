@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/adrian_blx/takoprint/lib/store"
-	"gitlab.com/adrian_blx/takoprint/lib/takoprint"
+	"git.sr.ht/~adrian-blx/takoprint/lib/store"
+	"git.sr.ht/~adrian-blx/takoprint/lib/takoprint"
 )
 
 type TaskStatus struct {

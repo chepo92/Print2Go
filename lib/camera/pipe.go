@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/pbnjay/pixfont"
-	"gitlab.com/adrian_blx/takoprint/lib/ezcam"
+	"git.sr.ht/~adrian-blx/takoprint/lib/ezcam"
 )
 
 func RunPipe(dev string, w, h uint32) {

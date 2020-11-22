@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"gitlab.com/adrian_blx/takoprint/lib/store"
+	"git.sr.ht/~adrian-blx/takoprint/lib/store"
 )
 
 type LocalStoreFile struct {
