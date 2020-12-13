@@ -12,6 +12,10 @@ will be able to directly upload gcode to Takoprint.
 - Octoprint emulation: Mimics the basic Octoprint API allowing for direct Gcode upload from various slicers.
 - Custom hooks: Takoprint can execute custom scripts after your print finished (eg. to turn off your printer).
 
+## Screenshots
+
+![webinterface](https://www.blinkenlights.ch/static/takoprint.png)
+
 ## Installation
 
 A reasonably recent version of the Go compiler is required to build takoprint.
