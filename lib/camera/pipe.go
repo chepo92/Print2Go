@@ -11,8 +11,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/pbnjay/pixfont"
 	"git.sr.ht/~adrian-blx/takoprint/lib/ezcam"
+	"github.com/pbnjay/pixfont"
+)
+
+const (
+	camSleep = time.Second * 1
 )
 
 func RunPipe(dev string, w, h uint32) {
@@ -44,7 +48,7 @@ func RunPipe(dev string, w, h uint32) {
 		if nw, err := os.Stdout.Write(pl.Bytes()); err != nil || nw != len(pl.Bytes()) {
 			os.Exit(1)
 		}
-		time.Sleep(time.Millisecond * 300)
+		time.Sleep(camSleep)
 	}
 }
 
