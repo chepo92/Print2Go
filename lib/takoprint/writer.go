@@ -2,7 +2,6 @@ package takoprint
 
 import (
 	"context"
-	"fmt"
 )
 
 // feedPrinter writes a new line to the printer after receiving an okChan interrupt.
@@ -35,7 +34,7 @@ func (tp *Takoprint) sendCommand(l string) {
 	tp.stats.lastCmd = l
 	tp.Unlock()
 
-	tp.serialOut.Write([]byte(fmt.Sprintf("%s\n", l)))
+	tp.serialOut.Write(append([]byte(l), '\r', '\n'))
 }
 
 // injectGcode adds a command to the gcode input feed, eventually sending it to the printer.
