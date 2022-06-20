@@ -54,6 +54,51 @@ func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, js)
 }
 
+func (svc *Svc) apiJobStatus(w http.ResponseWriter) {
+	c := svc.task.Subscribe()
+	defer svc.task.Unsubscribe(c)
+	select {
+	case <-time.After(5 * time.Second):
+	case v := <-c:
+		// state strings need to map 1:1 with what clients expect (ever heard of enums?).
+		state := "idle"
+		if v.Active {
+			state = "active"
+		}
+		res := struct {
+			Progress struct {
+				Completion float64 `json:"completion"`
+			} `json:"progress"`
+			Job struct {
+				File struct {
+					Name string `json:"name"`
+				} `json:"file"`
+			} `json:"job"`
+			State string `json:"state"`
+		}{
+			Progress: struct {
+				Completion float64 `json:"completion"`
+			}{
+				Completion: v.Done,
+			},
+			Job: struct {
+				File struct {
+					Name string `json:"name"`
+				} `json:"file"`
+			}{
+				File: struct {
+					Name string `json:"name"`
+				}{
+					Name: v.Text,
+				},
+			},
+			State: state,
+		}
+		jsonWrite(w, res)
+	}
+	jsonWrite(w, nil)
+}
+
 func (svc *Svc) jobCancel(w http.ResponseWriter) {
 	svc.task.Cancel()
 	jsonWrite(w, nil)

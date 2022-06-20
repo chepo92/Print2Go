@@ -2,6 +2,7 @@ package svc
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -50,8 +51,16 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	switch rq.URL.Path {
 	case "/api/version":
 		svc.versionReply(w, rq)
+	case "/api/settings":
+		svc.settingsReply(w)
+	case "/api/login":
+		svc.fakeLoginReply(w)
+	case "/api/printer":
+		svc.fakePrinterReply(w)
 	case "/api/files/local":
 		svc.localUpload(w, rq)
+	case "/api/job":
+		svc.apiJobStatus(w)
 	case "/api/job/status":
 		svc.jobStatus(w, rq)
 	case "/api/job/cancel":
@@ -67,6 +76,7 @@ func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 	case "/":
 		svc.indexPage(w)
 	default:
+		fmt.Printf("Unknown URL: %s\n", rq.URL.Path)
 		http.Error(w, "unknown url", 404)
 	}
 }
@@ -90,6 +100,64 @@ func (svc *Svc) versionReply(w http.ResponseWriter, rq *http.Request) {
 		API:     "0.1",
 		Version: "0.20200918",
 		Banner:  "OctoPrint compatible takoprint api",
+	}
+	jsonWrite(w, reply)
+}
+
+func (svc *Svc) settingsReply(w http.ResponseWriter) {
+	reply := struct {
+		Appearance struct {
+			Name string `json:"name"`
+		} `json:"appearance"`
+	}{
+		Appearance: struct {
+			Name string `json:"name"`
+		}{
+
+			Name: "takoprint",
+		},
+	}
+	jsonWrite(w, reply)
+}
+
+func (svc *Svc) fakeLoginReply(w http.ResponseWriter) {
+	reply := struct {
+		Ext     bool   `json:"_is_external_client"`
+		Session string `json:"session"`
+	}{
+		Session: "abadapi",
+	}
+	jsonWrite(w, reply)
+}
+
+type fakeFlags struct {
+	Operational bool `json:"operational"`
+	Ready       bool `json:"ready"`
+	Error       bool `json:"error"`
+	CoErr       bool `json:"closedOrError"`
+	Pausing     bool `json:"pausing"`
+	Paused      bool `json:"paused"`
+	Printing    bool `json:"printing"`
+	Cancelling   bool `json:"cancelling"`
+}
+
+func (svc *Svc) fakePrinterReply(w http.ResponseWriter) {
+	reply := struct {
+		State struct {
+			Text  string    `json:"text"`
+			Flags fakeFlags `json:"flags"`
+		} `json:"state"`
+	}{
+		State: struct {
+			Text  string    `json:"text"`
+			Flags fakeFlags `json:"flags"`
+		}{
+			Text: "operational",
+			Flags: fakeFlags{
+				Operational: true,
+				Ready:       true,
+			},
+		},
 	}
 	jsonWrite(w, reply)
 }
