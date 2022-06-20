@@ -61,13 +61,19 @@ func (svc *Svc) apiJobStatus(w http.ResponseWriter) {
 	case <-time.After(5 * time.Second):
 	case v := <-c:
 		// state strings need to map 1:1 with what clients expect (ever heard of enums?).
-		state := "idle"
+		state := "Operational"
+		ptime := int(0)
+		tleft := int(0)
 		if v.Active {
-			state = "active"
+			state = "Printing"
+			ptime = int(time.Now().Sub(v.Started).Seconds())
+			tleft = int(100 / (v.Done + 0.001) * float64(ptime))
 		}
 		res := struct {
 			Progress struct {
 				Completion float64 `json:"completion"`
+				PrintTime  int     `json:"printTime"`
+				Left       int     `json:"printTimeLeft"`
 			} `json:"progress"`
 			Job struct {
 				File struct {
@@ -78,8 +84,12 @@ func (svc *Svc) apiJobStatus(w http.ResponseWriter) {
 		}{
 			Progress: struct {
 				Completion float64 `json:"completion"`
+				PrintTime  int     `json:"printTime"`
+				Left       int     `json:"printTimeLeft"`
 			}{
 				Completion: v.Done,
+				PrintTime:  ptime,
+				Left:       tleft,
 			},
 			Job: struct {
 				File struct {
@@ -95,6 +105,7 @@ func (svc *Svc) apiJobStatus(w http.ResponseWriter) {
 			State: state,
 		}
 		jsonWrite(w, res)
+		return
 	}
 	jsonWrite(w, nil)
 }
