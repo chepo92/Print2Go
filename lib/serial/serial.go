@@ -53,10 +53,12 @@ func NewSerialPortFunc(tty string, baud int) func() (io.ReadWriteCloser, error) 
 
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
+			cancel()
 			return nil, err
 		}
 		stdin, err := cmd.StdinPipe()
 		if err != nil {
+			cancel()
 			return nil, err
 		}
 
