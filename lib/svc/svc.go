@@ -2,7 +2,6 @@ package svc
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -10,6 +9,9 @@ import (
 	"git.sr.ht/~adrian-blx/takoprint/lib/camera"
 	"git.sr.ht/~adrian-blx/takoprint/lib/store"
 	"git.sr.ht/~adrian-blx/takoprint/lib/task"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Svc struct {
@@ -37,48 +39,36 @@ func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser,
 		camera:     camera.New(),
 		task:       task.New(),
 	}
-	mux := http.NewServeMux()
-	mux.Handle("/", svc)
-	svc.srv.Handler = mux
 	return svc
 }
 
 func (svc *Svc) Run() error {
-	return svc.srv.ListenAndServe()
-}
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
 
-func (svc *Svc) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
-	switch rq.URL.Path {
-	case "/api/version":
-		svc.versionReply(w, rq)
-	case "/api/settings":
-		svc.settingsReply(w)
-	case "/api/login":
-		svc.fakeLoginReply(w)
-	case "/api/printer":
-		svc.fakePrinterReply(w)
-	case "/api/files/local":
-		svc.localUpload(w, rq)
-	case "/api/job":
-		svc.apiJobStatus(w)
-	case "/api/job/status":
-		svc.jobStatus(w, rq)
-	case "/api/job/cancel":
-		svc.jobCancel(w)
-	case "/api/gcode/action":
-		svc.enqueueBuiltin(w, rq)
-	case "/api/device/shutdown":
-		svc.shutdown()
-	case "/camera":
-		svc.cameraPage(w)
-	case "/camera/stream.mjpeg":
-		svc.camera.WriteStream(w)
-	case "/":
-		svc.indexPage(w)
-	default:
-		fmt.Printf("Unknown URL: %s\n", rq.URL.Path)
-		http.Error(w, "unknown url", 404)
-	}
+	svc.srv.Handler = r
+
+	r.Get("/", indexPage)
+	// Takoprint api
+	r.Get("/api/job/status", svc.jobStatus)
+	r.Post("/api/job/cancel", svc.jobCancel)
+	r.Post("/api/device/shutdown", svc.apiShutdown)
+	r.Post("/api/files/local", svc.localUpload)
+	r.Get("/api/gcode/action", svc.enqueueBuiltin)
+
+	// Octoprint fake-compatibility
+	r.Get("/api/version", svc.versionReply)
+	r.Get("/api/settings", svc.settingsReply)
+	r.Post("/api/login", svc.fakeLoginReply)
+	r.Get("/api/printer", svc.fakePrinterReply)
+	r.Get("/api/job", svc.apiJobStatus)
+
+	// Camera support
+	r.Get("/camera", svc.cameraPage)
+	r.Get("/camera/stream.mjpeg", svc.camera.WriteStream)
+	return svc.srv.ListenAndServe()
 }
 
 func jsonWrite(w http.ResponseWriter, msg interface{}) {
@@ -104,7 +94,7 @@ func (svc *Svc) versionReply(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, reply)
 }
 
-func (svc *Svc) settingsReply(w http.ResponseWriter) {
+func (svc *Svc) settingsReply(w http.ResponseWriter, r *http.Request) {
 	reply := struct {
 		Appearance struct {
 			Name string `json:"name"`
@@ -120,7 +110,7 @@ func (svc *Svc) settingsReply(w http.ResponseWriter) {
 	jsonWrite(w, reply)
 }
 
-func (svc *Svc) fakeLoginReply(w http.ResponseWriter) {
+func (svc *Svc) fakeLoginReply(w http.ResponseWriter, r *http.Request) {
 	reply := struct {
 		Ext     bool   `json:"_is_external_client"`
 		Session string `json:"session"`
@@ -138,10 +128,10 @@ type fakeFlags struct {
 	Pausing     bool `json:"pausing"`
 	Paused      bool `json:"paused"`
 	Printing    bool `json:"printing"`
-	Cancelling   bool `json:"cancelling"`
+	Cancelling  bool `json:"cancelling"`
 }
 
-func (svc *Svc) fakePrinterReply(w http.ResponseWriter) {
+func (svc *Svc) fakePrinterReply(w http.ResponseWriter, r *http.Request) {
 	reply := struct {
 		State struct {
 			Text  string    `json:"text"`
@@ -160,4 +150,9 @@ func (svc *Svc) fakePrinterReply(w http.ResponseWriter) {
 		},
 	}
 	jsonWrite(w, reply)
+}
+
+func (svc *Svc) apiShutdown(w http.ResponseWriter, r *http.Request) {
+	svc.shutdown()
+	jsonWrite(w, nil)
 }

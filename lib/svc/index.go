@@ -14,7 +14,7 @@ var (
 	indexTmpl = template.Must(template.New("index").Delims("[[", "]]").Parse(ibuf))
 )
 
-func (svc *Svc) indexPage(w http.ResponseWriter) {
+func indexPage(w http.ResponseWriter, r *http.Request) {
 	hn, err := os.Hostname()
 	if err != nil {
 		hn = "<unknown>"

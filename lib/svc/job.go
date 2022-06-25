@@ -54,7 +54,7 @@ func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, js)
 }
 
-func (svc *Svc) apiJobStatus(w http.ResponseWriter) {
+func (svc *Svc) apiJobStatus(w http.ResponseWriter, r *http.Request) {
 	c := svc.task.Subscribe()
 	defer svc.task.Unsubscribe(c)
 	select {
@@ -110,7 +110,7 @@ func (svc *Svc) apiJobStatus(w http.ResponseWriter) {
 	jsonWrite(w, nil)
 }
 
-func (svc *Svc) jobCancel(w http.ResponseWriter) {
+func (svc *Svc) jobCancel(w http.ResponseWriter, r *http.Request) {
 	svc.task.Cancel()
 	jsonWrite(w, nil)
 }

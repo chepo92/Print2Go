@@ -24,7 +24,7 @@ func New() *Camera {
 }
 
 // WriteStream writes a multipart (mjpeg) stream to the given response writer.
-func (cam *Camera) WriteStream(w http.ResponseWriter) {
+func (cam *Camera) WriteStream(w http.ResponseWriter, r *http.Request) {
 	c := cam.feedChan()
 	defer cam.closeFeed(c)
 
