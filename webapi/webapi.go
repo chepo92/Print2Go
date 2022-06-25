@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"sync"
 
-	"git.sr.ht/~adrian-blx/takoprint/lib/camera"
-	"git.sr.ht/~adrian-blx/takoprint/lib/store"
+	"git.sr.ht/~adrian-blx/takoprint/camera"
+	"git.sr.ht/~adrian-blx/takoprint/store"
 	"git.sr.ht/~adrian-blx/takoprint/lib/task"
 
 	"github.com/go-chi/chi/v5"

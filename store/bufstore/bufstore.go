@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"git.sr.ht/~adrian-blx/takoprint/lib/store"
+	"git.sr.ht/~adrian-blx/takoprint/store"
 )
 
 type Bufstore struct {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	"git.sr.ht/~adrian-blx/takoprint/lib/chanreader"
+	"git.sr.ht/~adrian-blx/takoprint/chanreader"
 )
 
 type Takoprint struct {
@@ -35,7 +35,7 @@ type stats struct {
 
 // New returns a new takoprint instance.
 func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Takoprint)) *Takoprint {
-	tp := &Takoprint {
+	tp := &Takoprint{
 		serialOut: s,
 		serialIn:  chanreader.New(s, chanreader.NopFilter()),
 		feedIn:    chanreader.New(f, chanreader.GcodeFilter()),
@@ -47,7 +47,7 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Takoprint)) *Takoprint
 	if tp.log == nil {
 		tp.log = log.New(os.Stderr, "takoprint ", 0)
 	}
-	return tp 
+	return tp
 }
 
 // Logger configures a custom logger instance.

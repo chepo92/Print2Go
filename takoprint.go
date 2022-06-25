@@ -9,9 +9,9 @@ import (
 	"os/exec"
 	"time"
 
-	"git.sr.ht/~adrian-blx/takoprint/lib/camera"
-	"git.sr.ht/~adrian-blx/takoprint/lib/serial"
-	"git.sr.ht/~adrian-blx/takoprint/lib/store/localstore"
+	"git.sr.ht/~adrian-blx/takoprint/camera"
+	"git.sr.ht/~adrian-blx/takoprint/serial"
+	"git.sr.ht/~adrian-blx/takoprint/store/localstore"
 	"git.sr.ht/~adrian-blx/takoprint/lib/task"
 	"git.sr.ht/~adrian-blx/takoprint/webapi"
 )

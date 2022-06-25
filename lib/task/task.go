@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"git.sr.ht/~adrian-blx/takoprint/lib/store"
+	"git.sr.ht/~adrian-blx/takoprint/store"
 	"git.sr.ht/~adrian-blx/takoprint/lib/takoprint"
 )
 
