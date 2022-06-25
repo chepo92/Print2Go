@@ -50,9 +50,9 @@ func main() {
 	}
 
 	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
-	s := svc.New(srv, localstore.New(*flagStorage), spf, shutdownFunc(*flagShutdown))
+	s := svc.New(localstore.New(*flagStorage), spf, shutdownFunc(*flagShutdown))
 	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
-	if err := s.Run(); err != nil {
+	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
 	}
 }

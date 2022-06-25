@@ -16,7 +16,6 @@ import (
 
 type Svc struct {
 	sync.RWMutex
-	srv        *http.Server
 	storage    FileStorage
 	camera     *camera.Camera
 	task       *task.Task
@@ -30,9 +29,8 @@ type FileStorage interface {
 	ReadFile(path, filename string) (store.Stream, error)
 }
 
-func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *Svc {
+func New(store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *Svc {
 	svc := &Svc{
-		srv:        srv,
 		storage:    store,
 		serialPort: serial,
 		shutdown:   shutdown,
@@ -42,13 +40,11 @@ func New(srv *http.Server, store FileStorage, serial func() (io.ReadWriteCloser,
 	return svc
 }
 
-func (svc *Svc) Run() error {
+func (svc *Svc) Run(srv *http.Server) error {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
-
-	svc.srv.Handler = r
 
 	r.Get("/", indexPage)
 	// Takoprint api
@@ -68,7 +64,9 @@ func (svc *Svc) Run() error {
 	// Camera support
 	r.Get("/camera", svc.cameraPage)
 	r.Get("/camera/stream.mjpeg", svc.camera.WriteStream)
-	return svc.srv.ListenAndServe()
+
+	srv.Handler = r
+	return srv.ListenAndServe()
 }
 
 func jsonWrite(w http.ResponseWriter, msg interface{}) {
