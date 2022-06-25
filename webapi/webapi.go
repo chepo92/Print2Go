@@ -8,7 +8,7 @@ import (
 
 	"git.sr.ht/~adrian-blx/takoprint/camera"
 	"git.sr.ht/~adrian-blx/takoprint/store"
-	"git.sr.ht/~adrian-blx/takoprint/lib/task"
+	"git.sr.ht/~adrian-blx/takoprint/task"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
