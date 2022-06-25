@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"sync"
 
 	"git.sr.ht/~adrian-blx/takoprint/camera"
 	"git.sr.ht/~adrian-blx/takoprint/store"
@@ -15,7 +14,6 @@ import (
 )
 
 type WebApi struct {
-	sync.RWMutex
 	storage    FileStorage
 	camera     *camera.Camera
 	task       *task.Task
