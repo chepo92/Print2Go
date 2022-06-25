@@ -1,4 +1,4 @@
-package svc
+package webapi
 
 import (
 	"net/http"
@@ -37,18 +37,18 @@ var gCodes = map[string][]string{
 	},
 }
 
-func (svc *Svc) enqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
+func (wapi *WebApi) enqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
 	q := rq.FormValue("action")
 
 	pl, ok := gCodes[q]
 	if !ok {
-		svc.error(w, "unknown internal gcode")
+		wapi.error(w, "unknown internal gcode")
 		return
 	}
 
 	code := []byte(strings.Join(pl, "\n") + "\n")
 	instr := bufstore.New(code, q)
-	if err := svc.enqueuePrint(instr, false); err != nil {
-		svc.error(w, "error executing internal gcode")
+	if err := wapi.enqueuePrint(instr, false); err != nil {
+		wapi.error(w, "error executing internal gcode")
 	}
 }

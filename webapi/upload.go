@@ -1,4 +1,4 @@
-package svc
+package webapi
 
 import (
 	"net/http"
@@ -17,21 +17,21 @@ type uploadReplyFiles struct {
 	Local *uploadReplyLocal `json:"local"`
 }
 
-func (svc *Svc) localUpload(w http.ResponseWriter, rq *http.Request) {
+func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	f, h, err := rq.FormFile("file")
 	if err != nil {
-		svc.error(w, "failed to parse form data")
+		wapi.error(w, "failed to parse form data")
 		return
 	}
 
 	if h.Size > maxUploadSize {
-		svc.error(w, "file upload exceeds limit")
+		wapi.error(w, "file upload exceeds limit")
 		return
 	}
 
 	path := rq.FormValue("path")
-	if err := svc.storage.UploadFile(path, h.Filename, f); err != nil {
-		svc.error(w, "failed to store file")
+	if err := wapi.storage.UploadFile(path, h.Filename, f); err != nil {
+		wapi.error(w, "failed to store file")
 		return
 	}
 
@@ -53,14 +53,14 @@ func (svc *Svc) localUpload(w http.ResponseWriter, rq *http.Request) {
 	if rq.FormValue("print") == "true" {
 		shutdown := rq.FormValue("shutdown") == "true"
 
-		svc.log("Enqueueing %s, %s for printing after upload. Shutdown = %v", path, h.Filename, shutdown)
-		instr, err := svc.storage.ReadFile(path, h.Filename)
+		wapi.log("Enqueueing %s, %s for printing after upload. Shutdown = %v", path, h.Filename, shutdown)
+		instr, err := wapi.storage.ReadFile(path, h.Filename)
 		if err != nil {
-			svc.log("failed to read file we just uploaded: %v", err)
+			wapi.log("failed to read file we just uploaded: %v", err)
 			return
 		}
-		if err := svc.enqueuePrint(instr, shutdown); err != nil {
-			svc.log("enqueueing failed: %v", err)
+		if err := wapi.enqueuePrint(instr, shutdown); err != nil {
+			wapi.log("enqueueing failed: %v", err)
 			return
 		}
 	}

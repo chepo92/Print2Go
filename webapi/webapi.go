@@ -1,4 +1,4 @@
-package svc
+package webapi
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-type Svc struct {
+type WebApi struct {
 	sync.RWMutex
 	storage    FileStorage
 	camera     *camera.Camera
@@ -29,18 +29,18 @@ type FileStorage interface {
 	ReadFile(path, filename string) (store.Stream, error)
 }
 
-func New(store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *Svc {
-	svc := &Svc{
+func New(store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
+	wapi := &WebApi{
 		storage:    store,
 		serialPort: serial,
 		shutdown:   shutdown,
 		camera:     camera.New(),
 		task:       task.New(),
 	}
-	return svc
+	return wapi
 }
 
-func (svc *Svc) Run(srv *http.Server) error {
+func (wapi *WebApi) Run(srv *http.Server) error {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -48,22 +48,22 @@ func (svc *Svc) Run(srv *http.Server) error {
 
 	r.Get("/", indexPage)
 	// Takoprint api
-	r.Get("/api/job/status", svc.jobStatus)
-	r.Post("/api/job/cancel", svc.jobCancel)
-	r.Post("/api/device/shutdown", svc.apiShutdown)
-	r.Post("/api/files/local", svc.localUpload)
-	r.Get("/api/gcode/action", svc.enqueueBuiltin)
+	r.Get("/api/job/status", wapi.jobStatus)
+	r.Post("/api/job/cancel", wapi.jobCancel)
+	r.Post("/api/device/shutdown", wapi.apiShutdown)
+	r.Post("/api/files/local", wapi.localUpload)
+	r.Get("/api/gcode/action", wapi.enqueueBuiltin)
 
 	// Octoprint fake-compatibility
-	r.Get("/api/version", svc.versionReply)
-	r.Get("/api/settings", svc.settingsReply)
-	r.Post("/api/login", svc.fakeLoginReply)
-	r.Get("/api/printer", svc.fakePrinterReply)
-	r.Get("/api/job", svc.apiJobStatus)
+	r.Get("/api/version", fakeVersionReply)
+	r.Get("/api/settings", settingsReply)
+	r.Post("/api/login", fakeLoginReply)
+	r.Get("/api/printer", fakePrinterReply)
+	r.Get("/api/job", wapi.apiJobStatus)
 
 	// Camera support
-	r.Get("/camera", svc.cameraPage)
-	r.Get("/camera/stream.mjpeg", svc.camera.WriteStream)
+	r.Get("/camera", cameraPage)
+	r.Get("/camera/stream.mjpeg", wapi.camera.WriteStream)
 
 	srv.Handler = r
 	return srv.ListenAndServe()
@@ -79,7 +79,7 @@ func jsonWrite(w http.ResponseWriter, msg interface{}) {
 	w.Write(pl)
 }
 
-func (svc *Svc) versionReply(w http.ResponseWriter, rq *http.Request) {
+func fakeVersionReply(w http.ResponseWriter, rq *http.Request) {
 	reply := struct {
 		API     string `json:"api"`
 		Version string `json:"server"`
@@ -92,7 +92,7 @@ func (svc *Svc) versionReply(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, reply)
 }
 
-func (svc *Svc) settingsReply(w http.ResponseWriter, r *http.Request) {
+func settingsReply(w http.ResponseWriter, r *http.Request) {
 	reply := struct {
 		Appearance struct {
 			Name string `json:"name"`
@@ -108,7 +108,7 @@ func (svc *Svc) settingsReply(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, reply)
 }
 
-func (svc *Svc) fakeLoginReply(w http.ResponseWriter, r *http.Request) {
+func fakeLoginReply(w http.ResponseWriter, r *http.Request) {
 	reply := struct {
 		Ext     bool   `json:"_is_external_client"`
 		Session string `json:"session"`
@@ -129,7 +129,7 @@ type fakeFlags struct {
 	Cancelling  bool `json:"cancelling"`
 }
 
-func (svc *Svc) fakePrinterReply(w http.ResponseWriter, r *http.Request) {
+func fakePrinterReply(w http.ResponseWriter, r *http.Request) {
 	reply := struct {
 		State struct {
 			Text  string    `json:"text"`
@@ -150,7 +150,7 @@ func (svc *Svc) fakePrinterReply(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, reply)
 }
 
-func (svc *Svc) apiShutdown(w http.ResponseWriter, r *http.Request) {
-	svc.shutdown()
+func (wapi *WebApi) apiShutdown(w http.ResponseWriter, r *http.Request) {
+	wapi.shutdown()
 	jsonWrite(w, nil)
 }

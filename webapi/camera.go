@@ -1,10 +1,10 @@
-package svc
+package webapi
 
 import (
 	"net/http"
 )
 
-func (svc *Svc) cameraPage(w http.ResponseWriter, r *http.Request) {
+func cameraPage(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`<html><head><title>Takoprint webcam</title></head>
 <body bgcolor="#323232">
 <center>

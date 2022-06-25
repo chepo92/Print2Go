@@ -1,4 +1,4 @@
-package svc
+package webapi
 
 import (
 	"html/template"

@@ -1,4 +1,4 @@
-package svc
+package webapi
 
 import (
 	"fmt"
@@ -20,12 +20,12 @@ type jobStatus struct {
 	RunDuration string        `json:"runDuration"`
 }
 
-func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
+func (wapi *WebApi) jobStatus(w http.ResponseWriter, rq *http.Request) {
 	nid, _ := strconv.Atoi(rq.FormValue("id"))
 	id := uint32(nid)
 
-	c := svc.task.Subscribe()
-	defer svc.task.Unsubscribe(c)
+	c := wapi.task.Subscribe()
+	defer wapi.task.Unsubscribe(c)
 
 	var js jobStatus
 	for range []int{1, 2} {
@@ -54,9 +54,9 @@ func (svc *Svc) jobStatus(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, js)
 }
 
-func (svc *Svc) apiJobStatus(w http.ResponseWriter, r *http.Request) {
-	c := svc.task.Subscribe()
-	defer svc.task.Unsubscribe(c)
+func (wapi *WebApi) apiJobStatus(w http.ResponseWriter, r *http.Request) {
+	c := wapi.task.Subscribe()
+	defer wapi.task.Unsubscribe(c)
 	select {
 	case <-time.After(5 * time.Second):
 	case v := <-c:
@@ -110,7 +110,7 @@ func (svc *Svc) apiJobStatus(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, nil)
 }
 
-func (svc *Svc) jobCancel(w http.ResponseWriter, r *http.Request) {
-	svc.task.Cancel()
+func (wapi *WebApi) jobCancel(w http.ResponseWriter, r *http.Request) {
+	wapi.task.Cancel()
 	jsonWrite(w, nil)
 }

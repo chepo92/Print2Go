@@ -12,8 +12,8 @@ import (
 	"git.sr.ht/~adrian-blx/takoprint/lib/camera"
 	"git.sr.ht/~adrian-blx/takoprint/lib/serial"
 	"git.sr.ht/~adrian-blx/takoprint/lib/store/localstore"
-	"git.sr.ht/~adrian-blx/takoprint/lib/svc"
 	"git.sr.ht/~adrian-blx/takoprint/lib/task"
+	"git.sr.ht/~adrian-blx/takoprint/webapi"
 )
 
 var (
@@ -50,7 +50,7 @@ func main() {
 	}
 
 	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
-	s := svc.New(localstore.New(*flagStorage), spf, shutdownFunc(*flagShutdown))
+	s := webapi.New(localstore.New(*flagStorage), spf, shutdownFunc(*flagShutdown))
 	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
