@@ -37,7 +37,7 @@ var gCodes = map[string][]string{
 	},
 }
 
-func (wapi *WebApi) enqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
+func (wapi *WebApi) takoEnqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
 	q := rq.FormValue("action")
 
 	pl, ok := gCodes[q]

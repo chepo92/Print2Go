@@ -46,18 +46,19 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 
 	r.Get("/", indexPage)
 	// Takoprint api
-	r.Get("/takoprint/job/status", wapi.jobStatus)
+	r.Get("/takoprint/job/status", wapi.takoJobStatus)
 	r.Post("/takoprint/job/create", wapi.localUpload)
-	r.Post("/takoprint/job/cancel", wapi.jobCancel)
-	r.Post("/takoprint/device/shutdown", wapi.apiShutdown)
-	r.Get("/takoprint/gcode/action", wapi.enqueueBuiltin)
+	r.Post("/takoprint/job/cancel", wapi.takoJobCancel)
+	r.Post("/takoprint/device/shutdown", wapi.takoShutdown)
+	r.Get("/takoprint/gcode/action", wapi.takoEnqueueBuiltin)
 
 	// Octoprint fake-compatibility
-	r.Get("/api/version", fakeVersionReply)
-	r.Get("/api/settings", settingsReply)
-	r.Post("/api/login", fakeLoginReply)
-	r.Get("/api/printer", fakePrinterReply)
-	r.Get("/api/job", wapi.apiJobStatus)
+	r.Get("/api/version", octoVersionReply)
+	r.Get("/api/settings", octoSettingsReply)
+	r.Post("/api/login", octoLoginReply)
+	r.Get("/api/printer", octoPrinterReply)
+	r.Get("/api/job", wapi.octoJobStatus)
+	r.Post("/api/job", wapi.octoModifyJob)
 	r.Post("/api/files/local", wapi.localUpload)
 
 	// Camera support
@@ -78,78 +79,7 @@ func jsonWrite(w http.ResponseWriter, msg interface{}) {
 	w.Write(pl)
 }
 
-func fakeVersionReply(w http.ResponseWriter, rq *http.Request) {
-	reply := struct {
-		API     string `json:"api"`
-		Version string `json:"server"`
-		Banner  string `json:"text"`
-	}{
-		API:     "0.1",
-		Version: "0.20200918",
-		Banner:  "OctoPrint compatible takoprint api",
-	}
-	jsonWrite(w, reply)
-}
-
-func settingsReply(w http.ResponseWriter, r *http.Request) {
-	reply := struct {
-		Appearance struct {
-			Name string `json:"name"`
-		} `json:"appearance"`
-	}{
-		Appearance: struct {
-			Name string `json:"name"`
-		}{
-
-			Name: "takoprint",
-		},
-	}
-	jsonWrite(w, reply)
-}
-
-func fakeLoginReply(w http.ResponseWriter, r *http.Request) {
-	reply := struct {
-		Ext     bool   `json:"_is_external_client"`
-		Session string `json:"session"`
-	}{
-		Session: "abadapi",
-	}
-	jsonWrite(w, reply)
-}
-
-type fakeFlags struct {
-	Operational bool `json:"operational"`
-	Ready       bool `json:"ready"`
-	Error       bool `json:"error"`
-	CoErr       bool `json:"closedOrError"`
-	Pausing     bool `json:"pausing"`
-	Paused      bool `json:"paused"`
-	Printing    bool `json:"printing"`
-	Cancelling  bool `json:"cancelling"`
-}
-
-func fakePrinterReply(w http.ResponseWriter, r *http.Request) {
-	reply := struct {
-		State struct {
-			Text  string    `json:"text"`
-			Flags fakeFlags `json:"flags"`
-		} `json:"state"`
-	}{
-		State: struct {
-			Text  string    `json:"text"`
-			Flags fakeFlags `json:"flags"`
-		}{
-			Text: "operational",
-			Flags: fakeFlags{
-				Operational: true,
-				Ready:       true,
-			},
-		},
-	}
-	jsonWrite(w, reply)
-}
-
-func (wapi *WebApi) apiShutdown(w http.ResponseWriter, r *http.Request) {
+func (wapi *WebApi) takoShutdown(w http.ResponseWriter, r *http.Request) {
 	wapi.shutdown()
 	jsonWrite(w, nil)
 }

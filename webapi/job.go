@@ -20,7 +20,7 @@ type jobStatus struct {
 	RunDuration string        `json:"runDuration"`
 }
 
-func (wapi *WebApi) jobStatus(w http.ResponseWriter, rq *http.Request) {
+func (wapi *WebApi) takoJobStatus(w http.ResponseWriter, rq *http.Request) {
 	nid, _ := strconv.Atoi(rq.FormValue("id"))
 	id := uint32(nid)
 
@@ -54,7 +54,7 @@ func (wapi *WebApi) jobStatus(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, js)
 }
 
-func (wapi *WebApi) apiJobStatus(w http.ResponseWriter, r *http.Request) {
+func (wapi *WebApi) octoJobStatus(w http.ResponseWriter, r *http.Request) {
 	c := wapi.task.Subscribe()
 	defer wapi.task.Unsubscribe(c)
 	select {
@@ -110,7 +110,7 @@ func (wapi *WebApi) apiJobStatus(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, nil)
 }
 
-func (wapi *WebApi) jobCancel(w http.ResponseWriter, r *http.Request) {
+func (wapi *WebApi) takoJobCancel(w http.ResponseWriter, r *http.Request) {
 	wapi.task.Cancel()
 	jsonWrite(w, nil)
 }
