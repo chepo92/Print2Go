@@ -1,8 +1,34 @@
 package webapi
 
-import "net/http"
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+)
 
 func (wapi *WebApi) octoModifyJob(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	buf, err := io.ReadAll(r.Body)
+	if err != nil {
+		wapi.error(w, "read body failure")
+		return
+	}
+	defer r.Body.Close()
+
+	rq := struct {
+		Command string `json:"command"`
+	}{}
+	if err := json.Unmarshal(buf, &rq); err != nil {
+		wapi.error(w, "json unmarshal error")
+		return
+	}
+
+	// Currently we don't support anything else.
+	if rq.Command != "cancel" {
+		wapi.error(w, "invalid command")
+		return
+	}
+	wapi.task.Cancel()
 }
 
 func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
@@ -11,8 +37,8 @@ func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
 		Version string `json:"server"`
 		Banner  string `json:"text"`
 	}{
-		API:     "0.1",
-		Version: "0.20200918",
+		API:     "0.2",
+		Version: "0.20220626",
 		Banner:  "OctoPrint compatible takoprint api",
 	}
 	jsonWrite(w, reply)
