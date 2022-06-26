@@ -148,10 +148,10 @@ new Vue({
     loadData: function () {
       vx = this;
       jQuery.ajax({
-        url: 'api/job/status',
+        url: 'takoprint/job/status',
         data: { id: vx.statusFp },
         error: function(d) {
-          console.log("api/job/status failure, backing off...");
+          console.log("takoprint/job/status failure, backing off...");
           setTimeout(vx.loadData, 1000);
         },
         success: function(d) {
@@ -166,20 +166,20 @@ new Vue({
     },
     onCancelJob: function() {
       jQuery.ajax({
-        url: 'api/job/cancel',
+        url: 'takoprint/job/cancel',
         method: 'POST',
         data: {cancel: true},
       });
     },
     onShutdownConfirmed: function() {
       jQuery.ajax({
-        url: 'api/device/shutdown',
+        url: 'takoprint/device/shutdown',
         method: 'POST',
       });
     },
     onBuiltinGcode: function(arg) {
       jQuery.ajax({
-        url: 'api/gcode/action',
+        url: 'takoprint/gcode/action',
         data: { action: arg },
       });
     },
@@ -193,7 +193,7 @@ new Vue({
       data.append("file", this.selectedFile);
       this.selectedFile = "";
       jQuery.ajax({
-        url: 'api/files/local',
+        url: 'takoprint/job/create',
         enctype: 'multipart/form-data',
         contentType: false,
         data: data,

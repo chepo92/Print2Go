@@ -46,11 +46,11 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 
 	r.Get("/", indexPage)
 	// Takoprint api
-	r.Get("/api/job/status", wapi.jobStatus)
-	r.Post("/api/job/cancel", wapi.jobCancel)
-	r.Post("/api/device/shutdown", wapi.apiShutdown)
-	r.Post("/api/files/local", wapi.localUpload)
-	r.Get("/api/gcode/action", wapi.enqueueBuiltin)
+	r.Get("/takoprint/job/status", wapi.jobStatus)
+	r.Post("/takoprint/job/create", wapi.localUpload)
+	r.Post("/takoprint/job/cancel", wapi.jobCancel)
+	r.Post("/takoprint/device/shutdown", wapi.apiShutdown)
+	r.Get("/takoprint/gcode/action", wapi.enqueueBuiltin)
 
 	// Octoprint fake-compatibility
 	r.Get("/api/version", fakeVersionReply)
@@ -58,6 +58,7 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Post("/api/login", fakeLoginReply)
 	r.Get("/api/printer", fakePrinterReply)
 	r.Get("/api/job", wapi.apiJobStatus)
+	r.Post("/api/files/local", wapi.localUpload)
 
 	// Camera support
 	r.Get("/camera", cameraPage)
