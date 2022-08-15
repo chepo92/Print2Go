@@ -32,7 +32,6 @@ var gCodes = map[string][]string{
 		"M140 S0          ; turn off heatbed",
 		"M107             ; turn off fan",
 		"G1 Z27.96 F600   ; Move print head up",
-		"G1 X0 Y200 F3000 ; present print",
 		"M84 X Y E        ; disable motors",
 	},
 }
