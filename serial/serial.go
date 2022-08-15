@@ -81,7 +81,7 @@ func handleSignals(s <-chan os.Signal, w io.Writer) {
 		switch sig {
 		case syscall.SIGUSR1:
 			// send 'ok' back to takoprint.
-			fmt.Fprintf(os.Stdout, "ok\n")
+			fmt.Fprintf(os.Stdout, "ok\r\n")
 		default:
 			// unhandled.
 		}

@@ -20,11 +20,11 @@ func main() {
 		panic(err)
 	}
 
-	fh.Write([]byte("printer booting blabla\nok\n"))
+	fh.Write([]byte("printer booting blabla\r\nok\r\n"))
 	s := bufio.NewScanner(fh)
 	for s.Scan() {
 		fmt.Printf(">> %s\n", s.Text())
 		time.Sleep(time.Millisecond * 50)
-		fh.Write([]byte("ok\n"))
+		fh.Write([]byte("ok\r\n"))
 	}
 }
