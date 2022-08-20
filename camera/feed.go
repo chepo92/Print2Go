@@ -26,7 +26,7 @@ func (cam *Camera) feedChan() chan []byte {
 		// no running subprocess, need to launch one.
 		cam.feed = newFeedReader(cam)
 		go func() {
-			err := cam.feed.Start()
+			err := cam.feed.Start(cam.camdev)
 			fmt.Printf("feed exited with %v\n", err)
 		}()
 	}
@@ -63,8 +63,8 @@ func newFeedReader(cam *Camera) *feedReader {
 }
 
 // Start launches a pipe and broadcasts the read data to all channels.
-func (fr *feedReader) Start() error {
-	cmd := exec.CommandContext(fr.ctx, os.Args[0], ":camera-pipe")
+func (fr *feedReader) Start(camdev string) error {
+	cmd := exec.CommandContext(fr.ctx, os.Args[0], "-camera", camdev, ":camera-pipe")
 	defer cmd.Wait()
 
 	pipe, err := cmd.StdoutPipe()

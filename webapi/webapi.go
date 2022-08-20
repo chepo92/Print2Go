@@ -27,12 +27,12 @@ type FileStorage interface {
 	ReadFile(path, filename string) (store.Stream, error)
 }
 
-func New(store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
+func New(camdev string, store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
 	wapi := &WebApi{
 		storage:    store,
 		serialPort: serial,
 		shutdown:   shutdown,
-		camera:     camera.New(),
+		camera:     camera.New(camdev),
 		task:       task.New(),
 	}
 	return wapi

@@ -12,14 +12,16 @@ import (
 // Camera holds all connected feed consumers and controls the feed input.
 type Camera struct {
 	sync.RWMutex
+	camdev   string
 	channels map[string]chan []byte
 	feed     *feedReader
 }
 
 // New returns a new camera instance.
-func New() *Camera {
+func New(camdev string) *Camera {
 	return &Camera{
 		channels: make(map[string]chan []byte),
+		camdev:   camdev,
 	}
 }
 
