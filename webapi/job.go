@@ -18,6 +18,7 @@ type jobStatus struct {
 	Hash        uint32        `json:"fp"`
 	Age         time.Duration `json:"ageSecs"`
 	RunDuration string        `json:"runDuration"`
+	Motd        string        `json:"motd"`
 }
 
 func (wapi *WebApi) takoJobStatus(w http.ResponseWriter, rq *http.Request) {
@@ -43,10 +44,14 @@ func (wapi *WebApi) takoJobStatus(w http.ResponseWriter, rq *http.Request) {
 				Age:         runDur / time.Second,
 				RunDuration: runDur.Round(time.Second).String(),
 			}
-			h := fnv.New32a()
-			h.Write([]byte(fmt.Sprintf("%+v", js)))
-			js.Hash = h.Sum32() & 0xEFFF
 		}
+
+		js.Motd = wapi.readMotd()
+		js.Hash = 0 // clear in case of previous attempt.
+
+		h := fnv.New32a()
+		h.Write([]byte(fmt.Sprintf("%+v", js)))
+		js.Hash = h.Sum32() & 0xEFFF
 		if js.Hash != id {
 			break
 		}

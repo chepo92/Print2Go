@@ -23,7 +23,11 @@
 </nav>
 
 <div class="container" id="app">
-<br>
+  <br>
+
+  <div class="alert alert-secondary" v-if="jobStatus.motd.length > 0">
+    {{ jobStatus.motd }}
+  </div>
 
 <!-- modal dialog to cancel the currently ongoing job -->
 <div class="modal fade" id="cancelDialog" tabindex="-1" role="dialog" aria-hidden="true">

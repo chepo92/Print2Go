@@ -18,6 +18,7 @@ type WebApi struct {
 	camera     *camera.Camera
 	task       *task.Task
 	serialPort func() (io.ReadWriteCloser, error)
+	motdFile   string
 	// function we execute if hardware should be shut down.
 	shutdown func()
 }
@@ -27,10 +28,11 @@ type FileStorage interface {
 	ReadFile(path, filename string) (store.Stream, error)
 }
 
-func New(camdev string, store FileStorage, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
+func New(camdev string, store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
 	wapi := &WebApi{
 		storage:    store,
 		serialPort: serial,
+		motdFile:   motdFile,
 		shutdown:   shutdown,
 		camera:     camera.New(camdev),
 		task:       task.New(),

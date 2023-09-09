@@ -23,6 +23,7 @@ var (
 	flagListen   = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
 	flagStorage  = flag.String("storage", "/tmp/takoprint", "path to store gcode in")
 	flagShutdown = flag.String("shutdown-script", "/usr/lib/takoprint-shutdown.sh", "script to execute to shutdown the printer")
+	flagMotd     = flag.String("motd-file", "/dev/null", "Message of the day to display on the UI")
 	flagCamera   = flag.String("camera", "/dev/video0", "V4L camera device")
 )
 
@@ -51,7 +52,7 @@ func main() {
 	}
 
 	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
-	s := webapi.New(*flagCamera, localstore.New(*flagStorage), spf, shutdownFunc(*flagShutdown))
+	s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
