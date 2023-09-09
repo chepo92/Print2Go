@@ -51,7 +51,7 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, reply)
 
 	if rq.FormValue("print") == "true" {
-		shutdown := rq.FormValue("shutdown") == "true"
+		shutdown := (rq.FormValue("shutdown") == "" || rq.FormValue("shutdown") == "true")
 
 		wapi.log("Enqueueing %s, %s for printing after upload. Shutdown = %v", path, h.Filename, shutdown)
 		instr, err := wapi.storage.ReadFile(path, h.Filename)
