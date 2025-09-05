@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"time"
 
 	"git.sr.ht/~adrian-blx/takoprint/camera"
@@ -17,14 +18,38 @@ import (
 )
 
 var (
-	flagTTY      = flag.String("tty", "/dev/ttyUSB0", "tty to use")
+	defaultTTY      string
+	defaultStorage  string
+	defaultShutdown string
+	defaultMotd     string
+	defaultCamera   string
+)
+
+func init() {
+	if runtime.GOOS == "windows" {
+		defaultTTY = "COM3"
+		defaultStorage = "C:\\takoprint_tmp"
+		defaultShutdown = "C:\\takoprint_shutdown.bat"
+		defaultMotd = "NUL"
+		defaultCamera = "" // No soportado en Windows
+	} else {
+		defaultTTY = "/dev/ttyUSB0"
+		defaultStorage = "/tmp/takoprint"
+		defaultShutdown = "/usr/lib/takoprint-shutdown.sh"
+		defaultMotd = "/dev/null"
+		defaultCamera = "/dev/video0"
+	}
+}
+
+var (
+	flagTTY      = flag.String("tty", defaultTTY, "tty to use")
 	flagBaud     = flag.Int("baud", 115200, "baud rate of -port")
 	flagGcode    = flag.String("gcode", "", "file containing gcode")
 	flagListen   = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
-	flagStorage  = flag.String("storage", "/tmp/takoprint", "path to store gcode in")
-	flagShutdown = flag.String("shutdown-script", "/usr/lib/takoprint-shutdown.sh", "script to execute to shutdown the printer")
-	flagMotd     = flag.String("motd-file", "/dev/null", "Message of the day to display on the UI")
-	flagCamera   = flag.String("camera", "/dev/video0", "V4L camera device")
+	flagStorage  = flag.String("storage", defaultStorage, "path to store gcode in")
+	flagShutdown = flag.String("shutdown-script", defaultShutdown, "script to execute to shutdown the printer")
+	flagMotd     = flag.String("motd-file", defaultMotd, "Message of the day to display on the UI")
+	flagCamera   = flag.String("camera", defaultCamera, "Camera device")
 )
 
 func main() {
