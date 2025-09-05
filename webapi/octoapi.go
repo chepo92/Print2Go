@@ -2,6 +2,7 @@ package webapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -81,7 +82,7 @@ type fakeFlags struct {
 	Cancelling  bool `json:"cancelling"`
 }
 
-func octoPrinterReply(w http.ResponseWriter, r *http.Request) {
+func octoPrinterReplyFake(w http.ResponseWriter, r *http.Request) {
 	reply := struct {
 		State struct {
 			Text  string    `json:"text"`
@@ -100,4 +101,43 @@ func octoPrinterReply(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	jsonWrite(w, reply)
+}
+
+type Command struct {
+	Command string `json:"command"`
+}
+
+func octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
+
+	// Declare a new Person struct.
+	var cmd Command
+
+	// Try to decode the request body into the struct. If there is an error,
+	// respond to the client with the error message and a 400 status code.
+	err := json.NewDecoder(r.Body).Decode(&cmd)
+	if err != nil {
+		fmt.Println("Error decoding JSON: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	fmt.Printf("Received request body + : %+v\n", cmd)
+
+	w.WriteHeader(http.StatusNoContent)
+
+}
+
+func parseJSON(r *http.Request) {
+
+	// Declare a new struct.
+	var cmd Command
+
+	// Try to decode the request body into the struct. If there is an error,
+	// respond to the client with the error message and a 400 status code.
+	err := json.NewDecoder(r.Body).Decode(&cmd)
+	if err != nil {
+		fmt.Println("Error decoding JSON: ", err)
+		return
+	}
+	fmt.Printf("Received request body + : %+v\n", cmd)
+
 }

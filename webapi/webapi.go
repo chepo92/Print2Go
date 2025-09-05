@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 
-	"git.sr.ht/~adrian-blx/takoprint/camera"
 	"git.sr.ht/~adrian-blx/takoprint/store"
 	"git.sr.ht/~adrian-blx/takoprint/task"
 
@@ -14,8 +13,8 @@ import (
 )
 
 type WebApi struct {
-	storage    FileStorage
-	camera     *camera.Camera
+	storage FileStorage
+	// camera     *camera.Camera // camera disabled for windows build
 	task       *task.Task
 	serialPort func() (io.ReadWriteCloser, error)
 	motdFile   string
@@ -28,14 +27,14 @@ type FileStorage interface {
 	ReadFile(path, filename string) (store.Stream, error)
 }
 
-func New(camdev string, store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
+func New(store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
 	wapi := &WebApi{
 		storage:    store,
 		serialPort: serial,
 		motdFile:   motdFile,
 		shutdown:   shutdown,
-		camera:     camera.New(camdev),
-		task:       task.New(),
+		//camera:     camera.New(camdev), // camera disabled for windows build
+		task: task.New(),
 	}
 	return wapi
 }
@@ -58,14 +57,15 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Get("/api/version", octoVersionReply)
 	r.Get("/api/settings", octoSettingsReply)
 	r.Post("/api/login", octoLoginReply)
-	r.Get("/api/printer", octoPrinterReply)
+	r.Get("/api/printer", octoPrinterReplyFake)
+	r.Post("/api/printer/command", octoPrinterCommand)
 	r.Get("/api/job", wapi.octoJobStatus)
 	r.Post("/api/job", wapi.octoModifyJob)
 	r.Post("/api/files/local", wapi.localUpload)
 
 	// Camera support
-	r.Get("/camera", cameraPage)
-	r.Get("/camera/stream.mjpeg", wapi.camera.WriteStream)
+	//r.Get("/camera", cameraPage) // camera disabled for windows build
+	//r.Get("/camera/stream.mjpeg", wapi.camera.WriteStream) // camera disabled for windows build
 
 	srv.Handler = r
 	return srv.ListenAndServe()

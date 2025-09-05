@@ -10,7 +10,8 @@ import (
 	"runtime"
 	"time"
 
-	"git.sr.ht/~adrian-blx/takoprint/camera"
+	// "git.sr.ht/~adrian-blx/takoprint/camera"  // Not compatible in windows
+
 	"git.sr.ht/~adrian-blx/takoprint/serial"
 	"git.sr.ht/~adrian-blx/takoprint/store/localstore"
 	"git.sr.ht/~adrian-blx/takoprint/task"
@@ -42,7 +43,7 @@ func init() {
 }
 
 var (
-	flagTTY      = flag.String("tty", defaultTTY, "tty to use")
+	flagTTY      = flag.String("tty", defaultTTY, "Port/tty to use")
 	flagBaud     = flag.Int("baud", 115200, "baud rate of -port")
 	flagGcode    = flag.String("gcode", "", "file containing gcode")
 	flagListen   = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
@@ -56,7 +57,7 @@ func main() {
 	flag.Parse()
 
 	if *flagTTY == "" {
-		xdie("-tty must be specified")
+		xdie("-tty Port must be specified")
 	}
 	if *flagGcode != "" {
 		oneshotPrint(*flagTTY, *flagBaud, *flagGcode)
@@ -68,7 +69,7 @@ func main() {
 		return
 	}
 	if os.Args[len(os.Args)-1] == ":camera-pipe" {
-		camera.RunPipe(*flagCamera, 640, 480)
+		// camera.RunPipe(*flagCamera, 640, 480) // will not call this func/lib in win
 		return
 	}
 
@@ -77,7 +78,8 @@ func main() {
 	}
 
 	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
-	s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
+	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
+	s := webapi.New(localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
