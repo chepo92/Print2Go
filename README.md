@@ -7,7 +7,7 @@ will be able to directly upload gcode to Takoprint.
 
 ## Features
 
-- Written in Go: Just push a single binary to your rbpi.
+- Written in Go: Just push a single binary to your host device.
 - Speed: Takoprint doesn't need a lot of resources and will work well even on older hardware.
 - Octoprint emulation: Mimics the basic Octoprint API allowing for direct Gcode upload from various slicers.
 - Custom hooks: Takoprint can execute custom scripts after your print finished (eg. to turn off your printer).
@@ -21,12 +21,12 @@ will be able to directly upload gcode to Takoprint.
 A reasonably recent version of the Go compiler is required to build takoprint.
 
 ```shell
-$ git clone https://git.sr.ht/~adrian-blx/takoprint
+$ git clone https://url.to.this/repo
 $ cd takoprint
-$ go build ./cmd/takoprint.go
+$ go build takoprint.go
 ```
 
-If you want to cross compile (example for a rbpi3):
+If you want to cross compile (example for a raspberry Pi 3):
 
 ```shell
 $ CGO_ENABLED=0 GOARCH=arm64 go build ./cmd/takoprint.go
@@ -102,3 +102,14 @@ for x in 1 2 3 ; do
         sleep 1
 done
 ```
+
+
+# Licence
+
+GPLv3. See licence file
+
+
+# Acknowledgement
+
+Adrian Ulrich - Takoprint
+https://git.sr.ht/~adrian-blx/takoprint
