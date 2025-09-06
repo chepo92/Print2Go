@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"git.sr.ht/~adrian-blx/takoprint/store"
+	"github.com/chepo92/PrintAndGo/store"
 )
 
 type Bufstore struct {

@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"git.sr.ht/~adrian-blx/takoprint/ezcam"
+	"github.com/chepo92/PrintAndGo/ezcam"
 	"github.com/pbnjay/pixfont"
 )
 

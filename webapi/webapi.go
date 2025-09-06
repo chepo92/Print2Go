@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-	"git.sr.ht/~adrian-blx/takoprint/store"
-	"git.sr.ht/~adrian-blx/takoprint/task"
+	"github.com/chepo92/PrintAndGo/store"
+	"github.com/chepo92/PrintAndGo/task"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

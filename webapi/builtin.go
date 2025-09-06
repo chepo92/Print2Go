@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"git.sr.ht/~adrian-blx/takoprint/store/bufstore"
+	"github.com/chepo92/PrintAndGo/store/bufstore"
 )
 
 var gCodes = map[string][]string{

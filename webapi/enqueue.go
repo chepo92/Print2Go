@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"git.sr.ht/~adrian-blx/takoprint/config"
-	"git.sr.ht/~adrian-blx/takoprint/store"
+	"github.com/chepo92/PrintAndGo/config"
+	"github.com/chepo92/PrintAndGo/store"
 )
 
 func (wapi *WebApi) enqueuePrint(instr store.Stream, shutdown bool) error {

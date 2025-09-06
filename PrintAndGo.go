@@ -10,12 +10,12 @@ import (
 	"runtime"
 	"time"
 
-	// "git.sr.ht/~adrian-blx/takoprint/camera"  // Not compatible in windows
+	// "github.com/chepo92/PrintAndGo/camera"  // Not compatible in windows
 
-	"PrintAndGo/serial"
-	"PrintAndGo/store/localstore"
-	"PrintAndGo/task"
-	"PrintAndGo/webapi"
+	"github.com/chepo92/PrintAndGo/serial"
+	"github.com/chepo92/PrintAndGo/store/localstore"
+	"github.com/chepo92/PrintAndGo/task"
+	"github.com/chepo92/PrintAndGo/webapi"
 )
 
 var (

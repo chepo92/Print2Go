@@ -1,4 +1,4 @@
-module git.sr.ht/~adrian-blx/takoprint
+module github.com/chepo92/PrintAndGo
 
 go 1.18
 
