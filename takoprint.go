@@ -80,7 +80,7 @@ func main() {
 	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	s := webapi.New(localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
-	log.Printf("Listeing on '%s' using serial port '%s'", *flagListen, *flagTTY)
+	log.Printf("Listening on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
 	}
