@@ -1,44 +1,54 @@
-# Takoprint
+# PrintAndGo
 
-Takoprint is a simple programm to feed gcode to a 3d printer.
+PrintAndGo is a simple programm to feed gcode to a 3d printer.
 It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software
-will be able to directly upload gcode to Takoprint.
+will be able to directly upload gcode to PrintAndGo.
 
+Its based in the code from Takoprint
 
 ## Features
 
 - Written in Go: Just push a single binary to your host device.
-- Speed: Takoprint doesn't need a lot of resources and will work well even on older hardware.
+- Speed: PrintAndGo doesn't need a lot of resources and will work well even on older hardware.
 - Octoprint emulation: Mimics the basic Octoprint API allowing for direct Gcode upload from various slicers.
-- Custom hooks: Takoprint can execute custom scripts after your print finished (eg. to turn off your printer).
+- Custom hooks: PrintAndGo can execute custom scripts after your print finished (eg. to turn off your printer).
 
 ## Screenshots
 
-![webinterface](https://www.blinkenlights.ch/static/takoprint.png)
+![webinterface]()
 
-## Installation
+## Build (Win/Linux)
 
 A reasonably recent version of the Go compiler is required to build takoprint.
 
 ```shell
 $ git clone https://url.to.this/repo
-$ cd takoprint
-$ go build takoprint.go
+$ cd PrintAndGo
+$ go build PrintAndGo.go
 ```
 
 If you want to cross compile (example for a raspberry Pi 3):
 
 ```shell
-$ CGO_ENABLED=0 GOARCH=arm64 go build ./cmd/takoprint.go
+$ CGO_ENABLED=0 GOARCH=arm64 go build ./cmd/PrintAndGo.go
 ```
 
-## Configuration
+## Build with docker (usually for dev and cross compile)
 
-Takoprint is configured via flags. By default, takoprint will listen on
+1. First build the docker image configured in the docker file, this will build the PrintAndGo code too
+`docker build -t go-builder-linux:1.0 .`
+
+1.alt Build updated files, no cache if anything changed (for dev) 
+`docker build -t go-builder-linux:1.0 . --no-cache`
+
+
+## Quick Configuration for running
+
+PrintAndGo is configured via flags. By default, PrintAndGo will listen on
 `127.0.0.1:5001` and expect a printer on `/dev/ttyUSB0`:
 
 ```shell
-$ ./takoprint -h
+$ ./PrintAndGo -h
 Usage of ./takoprint:
   -baud int
         baud rate of -port (default 115200)
@@ -54,12 +64,51 @@ Usage of ./takoprint:
         tty to use (default "/dev/ttyUSB0")
 ```
 
-Note that Takoprint only listens on `127.0.0.1` by default. You can tell Takoprint to listen on
+Note that PrintAndGo only listens on `127.0.0.1` by default. You can tell PrintAndGo to listen on
 all interfaces by running it via:
 
 ```
-$ ./takoprint -listen ':5001'
+$ ./printandgo -listen ':5001'
 ```
+
+## Run 
+
+### Run in host machine
+
+In a shell in windows or linux
+```
+./printandgo  -tty <host_device_path>
+```
+
+Examples:
+```
+./printandgo -tty COM3
+./printandgo -tty /dev/ttyUSB0
+```
+
+### With docker
+
+1. After build, first time run the container, run detached and interactive terminal
+You need to configure Map the usb device from host to container --device=<host_device_path>:<container_device_path>
+`docker run -p 5001:5001 -d -it --device COM3:/dev/ttyUSB0 --name linux-go-builder go-builder-linux:1.0`
+
+2. Run PrintAndGo
+`docker exec -it linux-go-builder /app/printandgo -tty /dev/ttyUSB0 -listen 0.0.0.0:5001`
+
+Note: PrintAndGo uses default ip 127.0.0.1 which is local only (cannot access from outside container), on the other hand docker uses 0.0.0.0 for exposing ports and services outside container, so we specify `-listen 0.0.0.0`, the port 5001 is the default of octoprint and can be changed (but need to change the docker file if you want another port)
+
+Other commands: 
+
+Start a previously run container
+`docker start -a -i linux-go-builder`
+
+Excecute command in container 
+`docker exec -it linux-go-builder /app/myapp -tty /dev/ttyUSB0`
+
+interactive shell access
+`docker exec -it linux-go-builder bash`
+
+
 
 ### Webcam
 
