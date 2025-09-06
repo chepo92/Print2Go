@@ -1,0 +1,21 @@
+# Stage 1: Build the Go application
+FROM golang:1.22-alpine AS builder
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy go.mod and go.sum files to leverage Docker's layer caching
+COPY go.mod go.sum ./
+
+# Download Go modules
+RUN go mod download
+
+# Copy the rest of the application source code
+COPY . .
+
+# Build the Go application
+# CGO_ENABLED=0 disables CGO, creating a statically linked binary
+# GOOS=linux ensures the binary is built for a Linux environment
+# -o specifies the output file name
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=mips GOMIPS=softfloat go build -o PrintAndGo .
+
