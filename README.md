@@ -19,12 +19,12 @@ Its based in the code from Takoprint
 
 ## Build (Win/Linux)
 
-A reasonably recent version of the Go compiler is required to build takoprint.
+A reasonably recent version of the Go compiler is required to build takoprint (v1.22+)
 
 ```shell
 $ git clone https://url.to.this/repo
 $ cd PrintAndGo
-$ go build PrintAndGo.go
+$ go build -o ./builds/PrintAndGo .
 ```
 
 If you want to cross compile (example for a raspberry Pi 3):
@@ -46,7 +46,7 @@ $ CGO_ENABLED=0 GOARCH=arm64 go build ./cmd/PrintAndGo.go
 `docker start -a -i go-container`
 
 In the interactive terminal 
-`go build PrintAndGo.go`
+`go build -o ./builds/PrintAndGo .`
 
 
 ### Cross compile
