@@ -38,9 +38,23 @@ $ CGO_ENABLED=0 GOARCH=arm64 go build ./cmd/PrintAndGo.go
 1. First build the docker image configured in the docker file, this will build the PrintAndGo code too
 `docker build -t go-builder-linux-img:1.0 .`
 
+1.1 After first time build, can be run
+
+`docker run --rm -v ./:/usr/src/app -w /usr/src/PrintAndGo -e GOOS=linux -e GOARCH=mips -e GOMIPS=softfloat go-builder-linux-img:1.0 go build -v`
+
+1.1 After first run, can be re-started, with interactive terminal
+`docker start -a -i go-container`
+
+In the interactive terminal 
+`go build PrintAndGo.go`
+
 
 ### Cross compile
-1.Build updated files, no cache if anything changed (for dev) 
+Go can be cross compiled
+
+`GOOS=linux GOARCH=mips GOMIPS=softfloat go build .`
+
+1.Build docker image with updated files, no cache if anything changed (for dev), dockerfile can be modified with cross compile commands
 `docker build --no-cache -t go-dev-linux-img:1.0 -f ./Dockerfile_builder .`
 
 `docker run --rm -v ./:/usr/src/app -w /usr/src/PrintAndGo -e GOOS=linux -e GOARCH=mips -e GOMIPS=softfloat go-builder-linux-img:1.0 go build -v`
@@ -106,18 +120,18 @@ For dev or other purposes can be run without mapping usb device
 
 Note: PrintAndGo uses default ip 127.0.0.1 which is local only (cannot access from outside container), on the other hand docker uses 0.0.0.0 for exposing ports and services outside container, so we specify `-listen 0.0.0.0`, the port 5001 is the default of octoprint and can be changed (but need to change the docker file if you want another port)
 
-Other commands: 
+### Other commands: 
 
-Start a previously run container
+Start a previously run container, with interactive shell (useful for build/running commands in the container)
 `docker start -a -i go-container`
-
-Excecute command in container 
-`docker exec -it go-container /app/myapp -tty /dev/ttyUSB0`
 
 interactive shell access
 `docker exec -it go-container bash`
 
-copy files back to host 
+Excecute command in container 
+`docker exec -it go-container /app/myapp -tty /dev/ttyUSB0`
+
+Copy files back to host (eg. after cross compile, get the binaries)
 
 `docker cp go-container:/app/PrintAndGo ./builds/PrintAndGo`
 
