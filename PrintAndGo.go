@@ -12,10 +12,10 @@ import (
 
 	// "git.sr.ht/~adrian-blx/takoprint/camera"  // Not compatible in windows
 
-	"git.sr.ht/~adrian-blx/takoprint/serial"
-	"git.sr.ht/~adrian-blx/takoprint/store/localstore"
-	"git.sr.ht/~adrian-blx/takoprint/task"
-	"git.sr.ht/~adrian-blx/takoprint/webapi"
+	"PrintAndGo/serial"
+	"PrintAndGo/store/localstore"
+	"PrintAndGo/task"
+	"PrintAndGo/webapi"
 )
 
 var (
@@ -29,13 +29,13 @@ var (
 func init() {
 	if runtime.GOOS == "windows" {
 		defaultTTY = "COM3"
-		defaultStorage = "C:\\takoprint_tmp"
-		defaultShutdown = "C:\\takoprint_shutdown.bat"
+		defaultStorage = "C:\\PrintAndGo_tmp"
+		defaultShutdown = "C:\\PrintAndGo_shutdown.bat"
 		defaultMotd = "NUL"
 		defaultCamera = "" // No soportado en Windows
 	} else {
 		defaultTTY = "/dev/ttyUSB0"
-		defaultStorage = "/tmp/takoprint"
+		defaultStorage = "/tmp/PrintAndGo"
 		defaultShutdown = "/usr/lib/takoprint-shutdown.sh"
 		defaultMotd = "/dev/null"
 		defaultCamera = "/dev/video0"
