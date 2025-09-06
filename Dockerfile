@@ -1,29 +1,39 @@
-# Choose our Go base image for compiling
-FROM golang:1.25
+# Stage 1: Build the Go application
+FROM golang:1.22-alpine AS builder
 
-# Select architecture, OS, and ARM version if applicable
-# ARG allows passing variables to the Dockerfile at build time
-# ARG BUILD_OS=linux
-# ARG BUILD_ARCH=amd64
-# ARG BUILD_ARM=7
+# Set the working directory inside the container
+WORKDIR /app
 
-# Set Go environment variables
-# ENV GOOS=$BUILD_OS
-# ENV GOARCH=$BUILD_ARCH
-# ENV GOARM=$BUILD_ARM
-
-WORKDIR /usr/src/app
-
-# pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
+# Copy go.mod and go.sum files to leverage Docker's layer caching
 COPY go.mod go.sum ./
+
+# Download Go modules
 RUN go mod download
 
-# Copy the code into the container
+# Copy the rest of the application source code
 COPY . .
 
-# Compile
-# RUN go build .
+# Build the Go application
+# CGO_ENABLED=0 disables CGO, creating a statically linked binary
+# GOOS=linux ensures the binary is built for a Linux environment
+# -o specifies the output file name
+RUN CGO_ENABLED=0 GOOS=linux go build -o PrintAndGo .
 
-RUN go build -v -o /usr/local/bin/app/ ./...
 
-CMD ["app"]
+# Stage 2: Create the final, minimal image
+FROM alpine:latest
+
+# Set the working directory in the final image
+WORKDIR /app
+
+# Install necessary runtime dependencies (e.g., CA certificates for HTTPS)
+RUN apk --no-cache add ca-certificates tzdata
+
+# Copy the built binary from the builder stage
+COPY --from=builder /app/PrintAndGo .
+
+# Expose the port your application listens on (if applicable)
+EXPOSE 5001
+
+# Set the entrypoint command to run the application
+#CMD ["/app/myapp "]
