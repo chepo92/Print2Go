@@ -36,11 +36,16 @@ $ CGO_ENABLED=0 GOARCH=arm64 go build ./cmd/PrintAndGo.go
 ## Build with docker (usually for dev and cross compile)
 
 1. First build the docker image configured in the docker file, this will build the PrintAndGo code too
-`docker build -t go-builder-linux:1.0 .`
+`docker build -t go-builder-linux-img:1.0 .`
 
-1.alt Build updated files, no cache if anything changed (for dev) 
-`docker build -t go-builder-linux:1.0 . --no-cache`
 
+### Cross compile
+1.Build updated files, no cache if anything changed (for dev) 
+`docker build --no-cache -t go-dev-linux-img:1.0 -f ./Dockerfile_builder .`
+
+`docker run --rm -v ./:/usr/src/app -w /usr/src/PrintAndGo -e GOOS=linux -e GOARCH=mips -e GOMIPS=softfloat go-builder-linux-img:1.0 go build -v`
+
+`docker run -d -it --name go-builder go-dev-linux-img:1.0`
 
 ## Quick Configuration for running
 
@@ -49,7 +54,7 @@ PrintAndGo is configured via flags. By default, PrintAndGo will listen on
 
 ```shell
 $ ./PrintAndGo -h
-Usage of ./takoprint:
+Usage of ./PrintAndGo:
   -baud int
         baud rate of -port (default 115200)
   -gcode string
@@ -77,38 +82,44 @@ $ ./printandgo -listen ':5001'
 
 In a shell in windows or linux
 ```
-./printandgo  -tty <host_device_path>
+./PrintAndGo  -tty <host_device_path>
 ```
 
 Examples:
 ```
-./printandgo -tty COM3
-./printandgo -tty /dev/ttyUSB0
+./PrintAndGo -tty COM3
+./PrintAndGo -tty /dev/ttyUSB0
 ```
 
 ### With docker
 
 1. After build, first time run the container, run detached and interactive terminal
 You need to configure Map the usb device from host to container --device=<host_device_path>:<container_device_path>
-`docker run -p 5001:5001 -d -it --device COM3:/dev/ttyUSB0 --name linux-go-builder go-builder-linux:1.0`
+`docker run -p 5001:5001 -d -it --device=/dev/ttyUSB0:/dev/ttyUSB0 --name go-container go-builder-linux-img:1.0`
+
+Note: Mapping usb devices from windows as host to linux involves configuring WSL2, not the aim of this guide
+For dev or other purposes can be run without mapping usb device
+`docker run -p 5001:5001 -d -it --name go-container go-builder-linux-img:1.0`
 
 2. Run PrintAndGo
-`docker exec -it linux-go-builder /app/printandgo -tty /dev/ttyUSB0 -listen 0.0.0.0:5001`
+`docker exec -it go-container /app/PrintAndGo -tty /dev/ttyUSB0 -listen 0.0.0.0:5001`
 
 Note: PrintAndGo uses default ip 127.0.0.1 which is local only (cannot access from outside container), on the other hand docker uses 0.0.0.0 for exposing ports and services outside container, so we specify `-listen 0.0.0.0`, the port 5001 is the default of octoprint and can be changed (but need to change the docker file if you want another port)
 
 Other commands: 
 
 Start a previously run container
-`docker start -a -i linux-go-builder`
+`docker start -a -i go-container`
 
 Excecute command in container 
-`docker exec -it linux-go-builder /app/myapp -tty /dev/ttyUSB0`
+`docker exec -it go-container /app/myapp -tty /dev/ttyUSB0`
 
 interactive shell access
-`docker exec -it linux-go-builder bash`
+`docker exec -it go-container bash`
 
+copy files back to host 
 
+`docker cp go-container:/app/PrintAndGo ./builds/PrintAndGo`
 
 ### Webcam
 
