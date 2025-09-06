@@ -103,41 +103,28 @@ func octoPrinterReplyFake(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, reply)
 }
 
-type Command struct {
-	Command string `json:"command"`
-}
-
 func octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
-	// Declare a new Person struct.
-	var cmd Command
+	defer r.Body.Close()
 
-	// Try to decode the request body into the struct. If there is an error,
-	// respond to the client with the error message and a 400 status code.
-	err := json.NewDecoder(r.Body).Decode(&cmd)
+	// Read the entire body into a byte slice
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("Error decoding JSON: ", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		fmt.Printf("Error reading request body: %v", err)
 		return
 	}
-	fmt.Printf("Received request body + : %+v\n", cmd)
 
+	// Convert the byte slice to a string (if needed)
+	bodyString := string(bodyBytes)
+
+	fmt.Printf("Received request body 2: %s\n", bodyString)
+	//fmt.Fprintf(w, "Request body received successfully!")
+
+	// We have to do something with the received command here, parse, check and send to printer, wait for OK, etc.
+	// For now we just print it to stdout.
+
+	// Octoprint replies with 204 No Content on success.
 	w.WriteHeader(http.StatusNoContent)
-
-}
-
-func parseJSON(r *http.Request) {
-
-	// Declare a new struct.
-	var cmd Command
-
-	// Try to decode the request body into the struct. If there is an error,
-	// respond to the client with the error message and a 400 status code.
-	err := json.NewDecoder(r.Body).Decode(&cmd)
-	if err != nil {
-		fmt.Println("Error decoding JSON: ", err)
-		return
-	}
-	fmt.Printf("Received request body + : %+v\n", cmd)
 
 }
