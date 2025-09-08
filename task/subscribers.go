@@ -5,34 +5,34 @@ import (
 )
 
 // Returns a channel which posts updates about the print status.
-func (t *Task) Subscribe() chan TaskStatus {
-	t.Lock()
-	defer t.Unlock()
+func (task *Task) Subscribe() chan TaskStatus {
+	task.Lock()
+	defer task.Unlock()
 	c := make(chan TaskStatus, 1)
-	c <- t.status
-	t.subscribers[fmt.Sprintf("%p", c)] = c
+	c <- task.status
+	task.subscribers[fmt.Sprintf("%p", c)] = c
 	return c
 }
 
-func (t *Task) Unsubscribe(c chan TaskStatus) {
-	t.Lock()
-	defer t.Unlock()
+func (task *Task) Unsubscribe(c chan TaskStatus) {
+	task.Lock()
+	defer task.Unlock()
 
 	k := fmt.Sprintf("%p", c)
-	_, ok := t.subscribers[k]
+	_, ok := task.subscribers[k]
 	if !ok {
 		panic(fmt.Errorf("chan was not subscribed"))
 	}
-	delete(t.subscribers, k)
+	delete(task.subscribers, k)
 	close(c)
 }
 
-func (t *Task) broadcast() {
-	t.RLock()
-	defer t.RUnlock()
+func (task *Task) broadcast() {
+	task.RLock()
+	defer task.RUnlock()
 
-	ts := t.status
-	for _, c := range t.subscribers {
+	ts := task.status
+	for _, c := range task.subscribers {
 		c := c // shadow
 		go func() {
 			defer func() {
