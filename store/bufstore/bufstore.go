@@ -10,17 +10,19 @@ import (
 
 type Bufstore struct {
 	sync.RWMutex
-	fh   io.Reader
-	name string
-	pos  int64
-	size int64
+	fh    io.Reader
+	name  string
+	pos   int64
+	size  int64
+	lines int64
 }
 
 func New(b []byte, name string) store.Stream {
 	return &Bufstore{
-		fh:   bytes.NewReader(b),
-		name: name,
-		size: int64(len(b)),
+		fh:    bytes.NewReader(b),
+		name:  name,
+		size:  int64(len(b)),
+		lines: int64(bytes.Count(b, []byte{'\n'})),
 	}
 }
 
@@ -48,4 +50,8 @@ func (bs *Bufstore) Pos() int64 {
 	bs.RLock()
 	defer bs.RUnlock()
 	return bs.pos
+}
+
+func (bs *Bufstore) LineCount() int64 {
+	return bs.lines
 }

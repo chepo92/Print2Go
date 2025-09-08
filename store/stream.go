@@ -14,4 +14,6 @@ type Stream interface {
 	Pos() int64
 	// name of the stream, usually the filename?
 	Name() string
+	// number of lines in the stream
+	LineCount() int64
 }

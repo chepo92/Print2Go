@@ -71,6 +71,7 @@ func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 
 	fmt.Println("Gcode: ", gcs.Name())
 	fmt.Println("Size: ", gcs.Size())
+	fmt.Println("Lines: ", gcs.LineCount())
 
 	// horray for circular dependencies!
 	takoprint.Callback(task.callback)(task.tp)
@@ -132,7 +133,7 @@ func (task *Task) nullify() {
 }
 
 // called by takoprint to update the status of the task, which is then broadcasted to subscribers
-func (task *Task) callback(d *takoprint.CallbackData) {
+func (task *Task) callback(cbd *takoprint.CallbackData) {
 	var txt string
 
 	task.Lock()
@@ -142,25 +143,26 @@ func (task *Task) callback(d *takoprint.CallbackData) {
 	defer func() {
 		if txt != task.status.Text {
 			task.status.Text = txt
-			task.tp.Echo(txt)
+			// task.tp.Echo(txt) // disable echoing status to printer, it's noisy
 			fmt.Println("Status: ", txt)
 		}
 	}()
 
-	if d == nil {
+	if cbd == nil {
 		task.status.Active = false
-		txt = "Yay! Done!"
+		txt = "Done!"
 		return
 	}
 
 	// Keep a couple of seen replies.
-	task.status.LastCommand = d.LastSent
-	task.status.LastReply = d.Reply
+	task.status.LastCommand = cbd.LastSent
+	task.status.LastReply = cbd.Reply
 
-	if sz := task.gcodeStream.Size(); sz > 0 {
-		task.status.DonePercent = float64(task.gcodeStream.Pos()) / float64(sz) * 100
+	lines := task.gcodeStream.LineCount()
+	if lines > 0 {
+		task.status.DonePercent = float64(cbd.NumSent) / float64(lines) * 100
 	}
 
-	// Assemble text and send it to printer on changes.
-	txt = fmt.Sprintf("%.1f%% (%s)", task.status.DonePercent, task.gcodeStream.Name())
+	// Assemble text and send for broadcasting.
+	txt = fmt.Sprintf("%s | Progress: %.1f%% | Line %d of %d", task.gcodeStream.Name(), task.status.DonePercent, cbd.NumSent, lines)
 }
