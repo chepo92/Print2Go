@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -10,19 +11,21 @@ import (
 	"github.com/chepo92/PrintAndGo/store"
 )
 
+// LocalStoreFile implements a file stream from a local file.
 type LocalStoreFile struct {
 	sync.RWMutex
-	r    io.ReadCloser
-	name string
-	pos  int64
-	size int64
+	r     io.ReadCloser
+	name  string
+	pos   int64
+	size  int64
+	lines int64
 }
 
 // ReadFile returns a gcode stream from a configured local store.
 func (ls *LocalStore) ReadFile(path, file string) (store.Stream, error) {
 	path, file, err := cleanPaths(path, file)
 	if err != nil {
-		return nil, fmt.Errorf("invalid path")
+		return nil, fmt.Errorf("Invalid path")
 	}
 
 	fh, err := os.Open(filepath.Join(ls.base, path, file))
@@ -32,18 +35,32 @@ func (ls *LocalStore) ReadFile(path, file string) (store.Stream, error) {
 	return FromFilehandle(fh)
 }
 
-// FromFilehandle wraps an open FH into a gcode stream.
+// FromFilehandle wraps an open filehanle into a gcode stream.
 func FromFilehandle(fh *os.File) (store.Stream, error) {
 	stat, err := fh.Stat()
 	if err != nil {
 		fh.Close()
 		return nil, err
 	}
+	// Count lines
+	lineCount, err := lineCounter(fh)
+	if err != nil {
+		fh.Close()
+		return nil, err
+	}
+	fmt.Printf("File has %d lines\n", lineCount)
+	// Reset file pointer to start
+	_, err = fh.Seek(0, io.SeekStart)
+	if err != nil {
+		fh.Close()
+		return nil, err
+	}
 
 	return &LocalStoreFile{
-		r:    fh,
-		name: stat.Name(),
-		size: stat.Size(),
+		r:     fh,
+		name:  stat.Name(),
+		size:  stat.Size(),
+		lines: int64(lineCount),
 	}, nil
 }
 
@@ -72,4 +89,24 @@ func (lsf *LocalStoreFile) Name() string {
 
 func (lsf *LocalStoreFile) Size() int64 {
 	return lsf.size
+}
+
+// optimized line counter
+func lineCounter(r io.Reader) (int, error) {
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
+
+	for {
+		c, err := r.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
+
+		switch {
+		case err == io.EOF:
+			return count, nil
+
+		case err != nil:
+			return count, err
+		}
+	}
 }
