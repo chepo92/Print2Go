@@ -81,7 +81,7 @@ func (tp *Takoprint) Start(ctx context.Context) {
 	//tp.sendCommand("M105")
 
 	// give printer some time to become ready.
-	tp.waitReady()
+	tp.waitReady(okChan)
 
 	// mark printer as ready for sending first command.
 	//okChan <- true
