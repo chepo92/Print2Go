@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	// maxUploadSize is 50MB
 	maxUploadSize = 1024 * 1024 * 50
 )
 
@@ -30,6 +31,8 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	}
 
 	path := rq.FormValue("path")
+	wapi.log("Specified path: %s", path)
+
 	if err := wapi.storage.UploadFile(path, h.Filename, f); err != nil {
 		wapi.error(w, "failed to store file")
 		return
@@ -53,7 +56,7 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	if rq.FormValue("print") == "true" {
 		shutdown := (rq.FormValue("shutdown") == "" || rq.FormValue("shutdown") == "true")
 
-		wapi.log("Enqueueing %s, %s for printing after upload. Shutdown = %v", path, h.Filename, shutdown)
+		wapi.log("Enqueueing: %s for printing after upload. Shutdown after print: %v", h.Filename, shutdown)
 		instr, err := wapi.storage.ReadFile(path, h.Filename)
 		if err != nil {
 			wapi.log("failed to read file we just uploaded: %v", err)
