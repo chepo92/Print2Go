@@ -29,7 +29,7 @@ func RunPipe(tty string, baud int) {
 	go func() { _, err := io.Copy(serialPort, os.Stdin); done <- err }()
 	go func() { _, err := io.Copy(os.Stdout, serialPort); done <- err }()
 	if err := <-done; err != nil {
-		fmt.Fprintf(os.Stderr, "pipe failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Pipe failed: %v\n", err)
 		os.Exit(2)
 	}
 	os.Exit(0)
