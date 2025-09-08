@@ -15,9 +15,13 @@ func (wapi *WebApi) error(w http.ResponseWriter, msg string) {
 }
 
 func (wapi *WebApi) readMotd() string {
-	pl, err := os.ReadFile(wapi.motdFile)
-	if err != nil {
-		wapi.log("failed to read motd file %q: %v", wapi.motdFile, err)
+	if wapi.motdFile == "" {
+		return "Default: Good morning!"
+	} else {
+		pl, err := os.ReadFile(wapi.motdFile)
+		if err != nil {
+			wapi.log("Failed to read motd file %q: %v", wapi.motdFile, err)
+		}
+		return string(pl)
 	}
-	return string(pl)
 }
