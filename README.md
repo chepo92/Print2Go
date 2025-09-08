@@ -62,6 +62,11 @@ Example for MIPS
 
 `docker run -d -it --name go-builder go-dev-linux-img:1.0`
 
+### Virtual printer
+
+There is a virtual printer code used for testing in /util
+
+
 ## Quick Configuration for running
 
 PrintAndGo is configured via flags. By default, PrintAndGo will listen on
