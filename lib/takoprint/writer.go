@@ -2,6 +2,7 @@ package takoprint
 
 import (
 	"context"
+	"strings"
 	"time"
 )
 
@@ -67,7 +68,8 @@ func (tp *Takoprint) sendCommand(l string) {
 	tp.stats.numSent++
 	tp.stats.lastCmd = l
 	tp.Unlock()
-	tp.log.Println("Sending: ", l)
+	command := strings.Split(l, ";") // remove Gcode comments if any
+	tp.log.Println("Sending: ", command[0])
 	tp.serialOut.Write(append([]byte(l), '\r', '\n'))
 }
 
