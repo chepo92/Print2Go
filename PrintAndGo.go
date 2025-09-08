@@ -89,33 +89,33 @@ func main() {
 // oneshotPrint just prints the specified gcode file.
 func oneshotPrint(tty string, baud int, gcode string) {
 	log.Printf("Printing '%s' on %s\n", gcode, tty)
-
+	// Open serial port
 	t := task.New()
 	p, err := serial.NewSerialPortFunc(tty, baud)()
 	if err != nil {
-		xdie("failed to attach serial port: %v", err)
+		xdie("Failed to attach serial port: %v", err)
 	}
 	defer p.Close()
-
+	// Open gcode file
 	fh, err := os.Open(gcode)
 	if err != nil {
-		xdie("failed to open gcode: %v", err)
+		xdie("Failed to open gcode: %v", err)
 	}
 	defer fh.Close()
-
+	// Create gcode file object
 	gf, err := localstore.FromFilehandle(fh)
 	if err != nil {
-		xdie("failed to open stream: %v", err)
+		xdie("Failed to open stream: %v", err)
 	}
-
+	// Start print task asynchronously
 	err = t.Launch(p, gf)
 	if err != nil {
-		xdie("task setup failed: %v", err)
+		xdie("Task setup failed: %v", err)
 	}
-
+	// Wait until done
 	for !t.Done() {
 		time.Sleep(time.Second)
-		log.Printf("working...\n")
+		log.Printf("Working...\n")
 	}
 }
 
