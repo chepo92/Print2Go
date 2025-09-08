@@ -13,6 +13,7 @@ import (
 
 type Takoprint struct {
 	sync.RWMutex
+	// logger instance
 	log *log.Logger
 	// input from serial port
 	serialIn <-chan string
@@ -45,7 +46,7 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Takoprint)) *Takoprint
 	}
 
 	if tp.log == nil {
-		tp.log = log.New(os.Stderr, "takoprint ", 0)
+		tp.log = log.New(os.Stderr, "PrintAndGo: ", 0)
 	}
 	return tp
 }
@@ -66,20 +67,24 @@ func Callback(cb CallbackDataFunc) func(*Takoprint) {
 
 // Echo prints a string on the printer screen.
 func (tp *Takoprint) Echo(str string) {
-	// TODO: escape.
-	tp.injectGcode(fmt.Sprintf("M117 %s", str))
+	// TODO: escape str properly
+	tp.injectGcode(fmt.Sprintf("M117 %q", str))
 }
 
 // Start feeds input data to the serial output.
 func (tp *Takoprint) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	okChan := make(chan bool, 1) // written to by readPrinter if it accept more data.
+	//sendChan := make(chan bool, 1) // written to by feedPrinter if it has sent data.
+
+	//tp.sendCommand("M105")
+	//tp.sendCommand("M105")
 
 	// give printer some time to become ready.
 	tp.waitReady()
 
-	// mark printer as ready for first command.
-	okChan <- true
+	// mark printer as ready for sending first command.
+	//okChan <- true
 
 	// Feeds the printer with input from the specified gcode io stream.
 	wctx, wcancel := context.WithCancel(ctx)
@@ -93,12 +98,12 @@ func (tp *Takoprint) Start(ctx context.Context) {
 	for !done {
 		select {
 		case <-ctx.Done():
-			tp.log.Printf("main context finished")
+			tp.log.Printf("Main context finished")
 			rcancel()
 			wcancel()
 			done = true
 		case <-rctx.Done():
-			tp.log.Printf("serial port vanished.")
+			tp.log.Printf("Serial port vanished")
 			wcancel()
 		case <-wctx.Done():
 			tp.log.Printf("gcode input stream is done")
