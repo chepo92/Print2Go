@@ -16,8 +16,8 @@ type TaskStatus struct {
 	File string
 	// Human readable description.
 	Text string
-	// Percentage printend.
-	Done float64
+	// Percentage printed
+	DonePercent float64
 	// Whether or not we actually do anything.
 	Active bool
 	// Time we started this print
@@ -50,6 +50,7 @@ func New() *Task {
 	}
 }
 
+// Launch starts a new print. Accepts an io.ReadWriteCloser for the serial port and a store.Stream for the gcode input.
 func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	task.Lock()
 	defer task.Unlock()
@@ -63,10 +64,13 @@ func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	task.ctx = ctx
 	task.cancel = cancel
 	task.gcodeStream = gcs
-	task.status.Done = 0
+	task.status.DonePercent = 0
 	task.status.Active = true
-	task.status.Text = "starting..."
+	task.status.Text = "Starting..."
 	task.status.Started = time.Now()
+
+	fmt.Println("Gcode: ", gcs.Name())
+	fmt.Println("Size: ", gcs.Size())
 
 	// horray for circular dependencies!
 	takoprint.Callback(task.callback)(task.tp)
@@ -127,7 +131,7 @@ func (task *Task) nullify() {
 	task.gcodeStream = nil
 }
 
-// called by takoprint to update the status.
+// called by takoprint to update the status of the task, which is then broadcasted to subscribers
 func (task *Task) callback(d *takoprint.CallbackData) {
 	var txt string
 
@@ -139,12 +143,13 @@ func (task *Task) callback(d *takoprint.CallbackData) {
 		if txt != task.status.Text {
 			task.status.Text = txt
 			task.tp.Echo(txt)
+			fmt.Println("Status: ", txt)
 		}
 	}()
 
 	if d == nil {
 		task.status.Active = false
-		txt = "(Finished)"
+		txt = "Yay! Done!"
 		return
 	}
 
@@ -153,9 +158,9 @@ func (task *Task) callback(d *takoprint.CallbackData) {
 	task.status.LastReply = d.Reply
 
 	if sz := task.gcodeStream.Size(); sz > 0 {
-		task.status.Done = float64(task.gcodeStream.Pos()) / float64(sz) * 100
+		task.status.DonePercent = float64(task.gcodeStream.Pos()) / float64(sz) * 100
 	}
 
 	// Assemble text and send it to printer on changes.
-	txt = fmt.Sprintf("%.1f%% (%s)", task.status.Done, task.gcodeStream.Name())
+	txt = fmt.Sprintf("%.1f%% (%s)", task.status.DonePercent, task.gcodeStream.Name())
 }

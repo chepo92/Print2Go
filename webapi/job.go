@@ -36,7 +36,7 @@ func (wapi *WebApi) takoJobStatus(w http.ResponseWriter, rq *http.Request) {
 			runDur := time.Now().Sub(v.Started)
 			js = jobStatus{
 				File:        v.File,
-				Done:        v.Done,
+				Done:        v.DonePercent,
 				Desc:        v.Text,
 				Cmd:         v.LastCommand,
 				Reply:       v.LastReply,
@@ -72,7 +72,7 @@ func (wapi *WebApi) octoJobStatus(w http.ResponseWriter, r *http.Request) {
 		if v.Active {
 			state = "Printing"
 			ptime = int(time.Now().Sub(v.Started).Seconds())
-			tleft = int(100 / (v.Done + 0.001) * float64(ptime))
+			tleft = int(100 / (v.DonePercent + 0.001) * float64(ptime))
 		}
 		res := struct {
 			Progress struct {
@@ -92,7 +92,7 @@ func (wapi *WebApi) octoJobStatus(w http.ResponseWriter, r *http.Request) {
 				PrintTime  int     `json:"printTime"`
 				Left       int     `json:"printTimeLeft"`
 			}{
-				Completion: v.Done,
+				Completion: v.DonePercent,
 				PrintTime:  ptime,
 				Left:       tleft,
 			},
