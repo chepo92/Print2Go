@@ -17,16 +17,17 @@ func New(base string) *LocalStore {
 	}
 }
 
+// UploadFile uploads a gcode file to the specified path in a local store.
 func (ls *LocalStore) UploadFile(path, file string, r io.ReadCloser) error {
 	path, file, err := cleanPaths(path, file)
 	if err != nil {
-		return fmt.Errorf("invalid path")
+		return fmt.Errorf("Invalid path")
 	}
 
 	os.MkdirAll(filepath.Join(ls.base, path), 0755)
 	fh, err := os.Create(filepath.Join(ls.base, path, file))
 	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
+		return fmt.Errorf("Failed to create file: %v", err)
 	}
 	defer fh.Close()
 	io.Copy(fh, r)
@@ -40,7 +41,7 @@ func cleanPaths(path, file string) (string, string, error) {
 	file = filepath.Clean(file)
 
 	if file == "" {
-		return "", "", fmt.Errorf("invalid path")
+		return "", "", fmt.Errorf("Invalid path")
 	}
 	return path, file, nil
 }
