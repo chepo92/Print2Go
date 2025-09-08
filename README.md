@@ -50,8 +50,9 @@ In the interactive terminal
 
 
 ### Cross compile
-Go can be cross compiled
 
+Go can be cross compiled
+Example for MIPS 
 `GOOS=linux GOARCH=mips GOMIPS=softfloat go build .`
 
 1.Build docker image with updated files, no cache if anything changed (for dev), dockerfile can be modified with cross compile commands
@@ -134,6 +135,11 @@ Excecute command in container
 Copy files back to host (eg. after cross compile, get the binaries)
 
 `docker cp go-container:/app/PrintAndGo ./builds/PrintAndGo`
+
+`docker cp ./helloWorld.go go-builder:/app/helloWorld.go`
+
+Run in OpWRT
+./PAG-le -tty /dev/ttyUSB0 -listen 192.168.8.155:5001
 
 ### Webcam
 
