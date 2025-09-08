@@ -7,30 +7,40 @@ import (
 )
 
 // waitReady waits up to 5 seconds for data to appear on the serial port.
-func (tp *Takoprint) waitReady() {
+func (tp *Takoprint) waitReady(okChan chan bool) {
 	select {
 	case <-time.After(5 * time.Second):
-		tp.log.Printf("Timeout waiting for initial line, trying anyway...")
-	case <-tp.serialIn:
+		tp.log.Printf("Timeout waiting for initial line, forcing start...")
+		// desbloquear writer aunque no haya ok
+		okChan <- true
+	case line, statusOk := <-tp.serialIn:
+		if !statusOk {
+			// serial console closed
+			tp.log.Printf("Serial closed")
+			return
+		}
 		tp.log.Printf("Printer sent first input")
-
-		// Lee todo el buffer serial
+		tp.log.Printf("Printer says: %q", line)
+		// limpiar el buffer durante 500ms
+		idle := time.NewTimer(500 * time.Millisecond)
 		for {
 			select {
 			case line, statusOk := <-tp.serialIn:
 				if !statusOk {
-					// El canal se cerró, salimos del bucle
+					// serial console closed
+					tp.log.Printf("Serial closed")
 					return
 				}
-				// Procesa la línea
-				tp.log.Printf("Received: %s", line)
-			case <-time.After(500 * time.Millisecond):
-				// Timeout, salimos del bucle
-				tp.log.Printf("Serial buffer cleared")
+
+				idle.Reset(500 * time.Millisecond)
+				tp.log.Printf("Printer says: %q", line)
+			case <-idle.C:
+				tp.log.Printf("Finished draining startup messages")
+				// desbloquear writer al terminar la limpieza
+				okChan <- true
 				return
 			}
 		}
-
 	}
 }
 
@@ -59,9 +69,7 @@ func (tp *Takoprint) readPrinter(ctx context.Context, cancel context.CancelFunc,
 					okChan <- true
 					tp.log.Printf("Printer says ok and more data: %q", line)
 				} else {
-					// signal that the printer cannot accept more data now, but we need to do something with it
-					//okChan <- false
-					okChan <- true
+					// Don't unlock the writer, log printer message only
 					tp.log.Printf("Printer says: %q", line)
 				}
 
