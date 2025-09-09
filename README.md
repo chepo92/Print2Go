@@ -1,17 +1,24 @@
 # PrintAndGo
 
-PrintAndGo is a simple programm to feed gcode to a 3d printer.
-It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software
-will be able to directly upload gcode to PrintAndGo.
+Can convert your router in a 3D printer host with a Octoprint-like API
+PrintAndGo is a lightweight and simple web based program written in Go to feed gcode to a 3d printer (aka gcode sender, 3d printer host)
+It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to PrintAndGo.
 
-Its based in the code from Takoprint
+It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) by[Adrian](https://github.com/adrian-bl)
 
 ## Features
 
-- Written in Go: Just push a single binary to your host device.
-- Speed: PrintAndGo doesn't need a lot of resources and will work well even on older hardware.
-- Octoprint emulation: Mimics the basic Octoprint API allowing for direct Gcode upload from various slicers.
-- Custom hooks: PrintAndGo can execute custom scripts after your print finished (eg. to turn off your printer).
+- Written in Go and Multiplatform: Compile from source for your target device or use the release binaries, run it in your host device. Compatible with Windows and Linux operating systems. Compatible with many target hardware, if your target is supported in Go, it should be compatible 
+- Aimed for lightweight: PrintAndGo doesn't need a lot of resources is only a 12MB binary (still not optimized)
+- Low hardware resource requirement: Will work well even on older/or low specs hardware
+- Can run in OpenWRT. This means you can use almost any router with usb port that supports OpenWRT or even in the Creality Wifi Box
+- Compatible with any 3D printer with usb port that has some version of Marlin firmware (or accepts standard gcode over serial)
+- Octoprint emulation: Mimics the basic Octoprint API allowing for direct Gcode upload from various slicers (Cura, PrusaSlicer)
+- Custom hooks: PrintAndGo can execute custom scripts after your print is finished (eg. to turn off your printer).
+
+
+- Brief story: this project is related to [OctoWrt](https://github.com/shivajiva101/OctoWrt), and the addition of the Creality WifiBox (WB01) in [OpenWRT](https://github.com/openwrt/openwrt/pull/19686). OctoPrint is a great sofware and tool, but not very optimized, as is written in python, which is also great but nowadays requires more resources than when it first started, I believe that current code will barely run in a raspberry pi 3 (which was the original target hardware as far as I know). I had previously contributed in a Octoprint-like (or mimic) firmware for embedded devices as ESP8266 or ESP32 see [WirelessPrinting](https://github.com/probonopd/WirelessPrinting), but there was missing sofware solution for the intermediate hardware between embedded devices and mini-pc (like a Raspberry pi). So it needed some leverage, then I found [Takoprint](https://git.sr.ht/~adrian-blx/takoprint), and connected everything together
+
 
 ## Screenshots
 
@@ -19,18 +26,20 @@ Its based in the code from Takoprint
 
 ## Build (Win/Linux)
 
-A reasonably recent version of the Go compiler is required to build takoprint (v1.22+)
+A reasonably recent version of the Go compiler is required to build takoprint (v1.25+) as Sptember 2025
 
 ```shell
 $ git clone https://url.to.this/repo
 $ cd PrintAndGo
-$ go build -o ./builds/PrintAndGo .
+$ go build -o ./builds/PrintAndGo.exe .   # in case of windows
+$ go build -o ./builds/PrintAndGo .       # in case of linux
 ```
 
-If you want to cross compile (example for a raspberry Pi 3):
+If you want to cross compile :
 
 ```shell
-$ CGO_ENABLED=0 GOARCH=arm64 go build ./cmd/PrintAndGo.go
+$ CGO_ENABLED=0 GOARCH=arm64 go build . # Example for a raspberry Pi 3
+$ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build . # Example for MIPS Little Endian
 ```
 
 ## Build with docker (usually for dev and cross compile)
@@ -52,8 +61,8 @@ In the interactive terminal
 ### Cross compile
 
 Go can be cross compiled
-Example for MIPS 
-`GOOS=linux GOARCH=mips GOMIPS=softfloat go build .`
+Example for MIPS Little Endian
+`GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build .`
 
 1.Build docker image with updated files, no cache if anything changed (for dev), dockerfile can be modified with cross compile commands
 `docker build --no-cache -t go-dev-linux-img:1.0 -f ./Dockerfile_builder .`
