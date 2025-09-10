@@ -15,7 +15,7 @@ func handleSignals(s <-chan os.Signal, w io.Writer) {
 	for sig := range s {
 		switch sig {
 		case syscall.SIGUSR1:
-			// send 'ok' back to takoprint.
+			// send 'ok' back to PrintAndGo.
 			fmt.Fprintf(os.Stdout, "ok\r\n")
 		default:
 			// unhandled.

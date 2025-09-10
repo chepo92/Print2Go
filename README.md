@@ -113,9 +113,9 @@ Usage of ./PrintAndGo:
   -listen string
         ip:port to bind to (default "127.0.0.1:5001")
   -shutdown-script string
-        script to execute to shutdown the printer (default "/usr/lib/takoprint-shutdown.sh")
+        script to execute to shutdown the printer (default "/usr/lib/printandgo-shutdown.sh")
   -storage string
-        path to store gcode in (default "/tmp/takoprint")
+        path to store gcode in (default "/tmp/printandgo")
   -tty string
         tty to use (default "/dev/ttyUSB0")
 ```

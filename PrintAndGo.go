@@ -36,7 +36,7 @@ func init() {
 	} else {
 		defaultTTY = "/dev/ttyUSB0"
 		defaultStorage = "/tmp/PrintAndGo"
-		defaultShutdown = "/usr/lib/takoprint-shutdown.sh"
+		defaultShutdown = "/usr/lib/printandgo-shutdown.sh"
 		defaultMotd = "/dev/null"
 		defaultCamera = "/dev/video0"
 	}

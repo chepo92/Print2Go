@@ -1,4 +1,4 @@
-package takoprint
+package printandgo
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/chepo92/PrintAndGo/chanreader"
 )
 
-type Takoprint struct {
+type PrintAndGo struct {
 	sync.RWMutex
 	// logger instance
 	log *log.Logger
@@ -34,9 +34,9 @@ type stats struct {
 	lastCmd string
 }
 
-// New returns a new takoprint instance.
-func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Takoprint)) *Takoprint {
-	tp := &Takoprint{
+// New returns a new PrintAndGo instance.
+func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*PrintAndGo)) *PrintAndGo {
+	tp := &PrintAndGo{
 		serialOut: s,
 		serialIn:  chanreader.New(s, chanreader.NopFilter()),
 		feedIn:    chanreader.New(f, chanreader.GcodeFilter()),
@@ -52,27 +52,27 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*Takoprint)) *Takoprint
 }
 
 // Logger configures a custom logger instance.
-func Logger(l *log.Logger) func(*Takoprint) {
-	return func(tp *Takoprint) {
+func Logger(l *log.Logger) func(*PrintAndGo) {
+	return func(tp *PrintAndGo) {
 		tp.log = l
 	}
 }
 
 // Callback configures an event callback consumer
-func Callback(cb CallbackDataFunc) func(*Takoprint) {
-	return func(tp *Takoprint) {
+func Callback(cb CallbackDataFunc) func(*PrintAndGo) {
+	return func(tp *PrintAndGo) {
 		tp.cb = cb
 	}
 }
 
 // Echo prints a string on the printer screen.
-func (tp *Takoprint) Echo(str string) {
+func (tp *PrintAndGo) Echo(str string) {
 	// TODO: escape str properly
 	tp.injectGcode(fmt.Sprintf("M117 %q", str))
 }
 
 // Start feeds input data to the serial output.
-func (tp *Takoprint) Start(ctx context.Context) {
+func (tp *PrintAndGo) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	okChan := make(chan bool, 1) // written to by readPrinter if it accept more data.
 	//sendChan := make(chan bool, 1) // written to by feedPrinter if it has sent data.

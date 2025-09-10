@@ -21,7 +21,7 @@
       <a href="#" >Serial log</a>
     </span>  
     <span class="navbar-text">
-      <a href="#" onclick="window.open('camera', 'takocam', 'width=800,height=500')">Webcam</a>
+      <a href="#" onclick="window.open('camera', 'pagcam', 'width=800,height=500')">Webcam</a>
     </span>
 </nav>
 
@@ -155,10 +155,10 @@ new Vue({
     loadData: function () {
       vx = this;
       jQuery.ajax({
-        url: 'takoprint/job/status',
+        url: 'printandgo/job/status',
         data: { id: vx.statusFp },
         error: function(d) {
-          console.log("takoprint/job/status failure, backing off...");
+          console.log("printandgo/job/status failure, backing off...");
           setTimeout(vx.loadData, 1000);
         },
         success: function(d) {
@@ -173,20 +173,20 @@ new Vue({
     },
     onCancelJob: function() {
       jQuery.ajax({
-        url: 'takoprint/job/cancel',
+        url: 'printandgo/job/cancel',
         method: 'POST',
         data: {cancel: true},
       });
     },
     onShutdownConfirmed: function() {
       jQuery.ajax({
-        url: 'takoprint/device/shutdown',
+        url: 'printandgo/device/shutdown',
         method: 'POST',
       });
     },
     onBuiltinGcode: function(arg) {
       jQuery.ajax({
-        url: 'takoprint/gcode/action',
+        url: 'printandgo/gcode/action',
         data: { action: arg },
       });
     },
@@ -200,7 +200,7 @@ new Vue({
       data.append("file", this.selectedFile);
       this.selectedFile = "";
       jQuery.ajax({
-        url: 'takoprint/job/create',
+        url: 'printandgo/job/create',
         enctype: 'multipart/form-data',
         contentType: false,
         data: data,

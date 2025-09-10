@@ -1,4 +1,4 @@
-package takoprint
+package printandgo
 
 type CallbackData struct {
 	LastSent string
@@ -8,7 +8,7 @@ type CallbackData struct {
 
 type CallbackDataFunc func(*CallbackData)
 
-func (tp *Takoprint) fireCallback(l string) {
+func (tp *PrintAndGo) fireCallback(l string) {
 	if tp.cb == nil {
 		return
 	}

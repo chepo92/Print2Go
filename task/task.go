@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chepo92/PrintAndGo/lib/takoprint"
+	"github.com/chepo92/PrintAndGo/lib/printandgo"
 	"github.com/chepo92/PrintAndGo/store"
 )
 
@@ -34,8 +34,8 @@ type Task struct {
 	ctx context.Context
 	// Function to cancel the print context.
 	cancel context.CancelFunc
-	// Takoprint reference.
-	tp *takoprint.Takoprint
+	// PrintAndGo reference.
+	tp *printandgo.PrintAndGo
 	// Gcode input.
 	gcodeStream store.Stream
 	// Status of the currently running print.
@@ -60,7 +60,7 @@ func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	task.tp = takoprint.New(p, gcs)
+	task.tp = printandgo.New(p, gcs)
 	task.ctx = ctx
 	task.cancel = cancel
 	task.gcodeStream = gcs
@@ -74,10 +74,10 @@ func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	fmt.Println("Lines: ", gcs.LineCount())
 
 	// horray for circular dependencies!
-	takoprint.Callback(task.callback)(task.tp)
+	printandgo.Callback(task.callback)(task.tp)
 
 	// semi-empty callback to anounce that we are now active.
-	go task.callback(&takoprint.CallbackData{})
+	go task.callback(&printandgo.CallbackData{})
 	go task.start()
 	return nil
 }
@@ -132,8 +132,8 @@ func (task *Task) nullify() {
 	task.gcodeStream = nil
 }
 
-// called by takoprint to update the status of the task, which is then broadcasted to subscribers
-func (task *Task) callback(cbd *takoprint.CallbackData) {
+// called by PrintAndGo to update the status of the task, which is then broadcasted to subscribers
+func (task *Task) callback(cbd *printandgo.CallbackData) {
 	var txt string
 
 	task.Lock()

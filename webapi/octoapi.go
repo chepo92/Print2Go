@@ -40,7 +40,7 @@ func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
 	}{
 		API:     "0.2",
 		Version: "0.20220626",
-		Banner:  "OctoPrint compatible takoprint api",
+		Banner:  "OctoPrint compatible PrintAndGo api",
 	}
 	jsonWrite(w, reply)
 }
@@ -55,7 +55,7 @@ func octoSettingsReply(w http.ResponseWriter, r *http.Request) {
 			Name string `json:"name"`
 		}{
 
-			Name: "takoprint",
+			Name: "PrintAndGo",
 		},
 	}
 	jsonWrite(w, reply)

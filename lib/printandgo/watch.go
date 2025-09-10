@@ -1,4 +1,4 @@
-package takoprint
+package printandgo
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 )
 
 // waitReady waits up to 5 seconds for data to appear on the serial port.
-func (tp *Takoprint) waitReady(okChan chan bool) {
+func (tp *PrintAndGo) waitReady(okChan chan bool) {
 	select {
 	case <-time.After(5 * time.Second):
 		tp.log.Printf("Timeout waiting for initial line, forcing start...")
@@ -45,7 +45,7 @@ func (tp *Takoprint) waitReady(okChan chan bool) {
 }
 
 // readPrinter reads data from the printer.
-func (tp *Takoprint) readPrinter(ctx context.Context, cancel context.CancelFunc, okChan chan bool) {
+func (tp *PrintAndGo) readPrinter(ctx context.Context, cancel context.CancelFunc, okChan chan bool) {
 	defer cancel()
 	// start := time.Now()
 	// inLoop := false

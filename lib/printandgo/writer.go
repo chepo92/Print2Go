@@ -1,4 +1,4 @@
-package takoprint
+package printandgo
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 // feedPrinter writes a new line to the printer after receiving an okChan interrupt.
 // calls the passed in cancel func once all data was consumed.
-func (tp *Takoprint) feedPrinter(ctx context.Context, cancel context.CancelFunc, okChan <-chan bool) {
+func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc, okChan <-chan bool) {
 	defer cancel()
 	// start := time.Now()
 	// inLoop := false
@@ -63,7 +63,7 @@ func (tp *Takoprint) feedPrinter(ctx context.Context, cancel context.CancelFunc,
 }
 
 // sendCommand writes a command to the printer.
-func (tp *Takoprint) sendCommand(l string) {
+func (tp *PrintAndGo) sendCommand(l string) {
 	tp.Lock()
 	tp.stats.numSent++
 	tp.stats.lastCmd = l
@@ -74,7 +74,7 @@ func (tp *Takoprint) sendCommand(l string) {
 }
 
 // injectGcode adds a command to the gcode input feed, eventually sending it to the printer.
-func (tp *Takoprint) injectGcode(cmd string) {
+func (tp *PrintAndGo) injectGcode(cmd string) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
