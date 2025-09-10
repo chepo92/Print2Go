@@ -1,6 +1,7 @@
 # PrintAndGo
 
-Can convert your router in a 3D printer host with a Octoprint-like API
+3D printer host written in Go language
+Convert your router in a 3D printer host with an Octoprint-like API
 PrintAndGo is a lightweight and simple web based program written in Go to feed gcode to a 3d printer (aka gcode sender, 3d printer host)
 It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to PrintAndGo.
 
@@ -22,11 +23,11 @@ It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) b
 
 ## Screenshots
 
-![webinterface]()
+![webinterface](/img/printandgo_home_gui.png)
 
 ## Build (Win/Linux)
 
-A reasonably recent version of the Go compiler is required to build takoprint (v1.25+) as Sptember 2025
+A reasonably recent version of the Go compiler is required to build PrintAndGo (v1.25+) as September 2025
 
 ```shell
 $ git clone https://url.to.this/repo
@@ -47,21 +48,20 @@ $ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/PrintAndGo . # 
 1. First build the docker image configured in the docker file, this will build the PrintAndGo code too
 `docker build -t go-builder-linux-img:1.0 .`
 
-1.1 After first time build, can be run
+2. After first time build, can be run
 
 `docker run --rm -v ./:/usr/src/app -w /usr/src/PrintAndGo -e GOOS=linux -e GOARCH=mips -e GOMIPS=softfloat go-builder-linux-img:1.0 go build -v`
 
-1.1 After first run, can be re-started, with interactive terminal
+3. After first run, can be re-started, with interactive terminal
 `docker start -a -i go-container`
 
-In the interactive terminal 
+4. In the interactive terminal 
 `go build -o ./builds/PrintAndGo .`
 
-
-Copy files back to host (eg. after cross compile, get the binaries)
+5. Once build, copy files back to host (eg. after cross compile, get the binaries)
 `docker cp go-container:/app/builds/PrintAndGo ./builds/PrintAndGo`
 
-Copy files from host to container (eg. developed new code and need to compile in docker), better to delete previous files if made a lot of changes
+6. If you need to update the source, copy files from host to container (eg. developed new code and need to compile in docker), better to delete previous files if made a lot of changes
 `docker cp ./* go-builder:/app/*`
 
 
@@ -71,19 +71,34 @@ Go can be cross compiled
 Example for MIPS Little Endian
 `GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build .`
 
-1.Build docker image with updated files, no cache if anything changed (for dev), dockerfile can be modified with cross compile commands
+1.Build docker image with updated files, no cache if anything changed (for dev), dockerfile and docker image can be modified with cross compile commands
 `docker build --no-cache -t go-dev-linux-img:1.0 -f ./Dockerfile_builder .`
 
+Examples
 `docker run --rm -v ./:/usr/src/app -w /usr/src/PrintAndGo -e GOOS=linux -e GOARCH=mips -e GOMIPS=softfloat go-builder-linux-img:1.0 go build -v`
 
+Examples
 `docker run -d -it --name go-builder go-dev-linux-img:1.0`
 
 ### Virtual printer
 
-There is a virtual printer code used for testing in /util
+There is a virtual printer code used for testing in /util from the original Takoprint repo. 
 
 
-## Quick Configuration for running
+## Run 
+
+### Run in host machine
+
+In a shell in windows or linux
+```
+./PrintAndGo  -tty <host_device_path>
+```
+
+Examples:
+```
+./PrintAndGo -tty COM3
+./PrintAndGo -tty /dev/ttyUSB0
+```
 
 PrintAndGo is configured via flags. By default, PrintAndGo will listen on
 `127.0.0.1:5001` and expect a printer on `/dev/ttyUSB0`:
@@ -112,20 +127,6 @@ all interfaces by running it via:
 $ ./printandgo -listen ':5001'
 ```
 
-## Run 
-
-### Run in host machine
-
-In a shell in windows or linux
-```
-./PrintAndGo  -tty <host_device_path>
-```
-
-Examples:
-```
-./PrintAndGo -tty COM3
-./PrintAndGo -tty /dev/ttyUSB0
-```
 
 ### With docker
 
@@ -165,21 +166,21 @@ Webcam support is WIP, but should mostly work - as long as your webcam shows up 
 Note that certain webcams are extremely power hungry and can cause stability issues on RBPI hardware:
 
 The excessive power draw of some webcams can cause issues to the USB controller, resulting in 'lost gcode' replies
-which will cause the print to stall. This is *not* a bug in Takoprint: If you suffer from this issue, get a better
+which will cause the print to stall. This is *not* a bug in PrintAndGo: If you suffer from this issue, get a better
 power supply or/and replace your webcam (or find other ways to feed power to it, like using an active USB hub).
 
-Note that Takoprint has an escape hatch for stalled prints: Sending a `USR1` signal to Takoprints TTY subprocess
+Note that PrintAndGo has an escape hatch for stalled prints: Sending a `USR1` signal to PrintAndGo TTY subprocess
 should resume the print in most cases:
 
 ```shell
 $ ps -ef|grep :serial-pipe   # first, find the subprocess
-takopri+   351   301  0 09:01 ?        00:00:00 takoprint -tty /dev/ttyUSB0 -baud 115200 :serial-pipe
+takopri+   351   301  0 09:01 ?        00:00:00 PrintAndGo -tty /dev/ttyUSB0 -baud 115200 :serial-pipe
 $ kill -USR1 351  # send SIGUSR1
 ```
 
-### Automatic shutdown
+### Post print Script
 
-Takoprint can be configured to run a command after the print finished.
+PrintAndGo can be configured to run a command after the print finished. Eg. Automatic shutdown
 By default, `/usr/lib/takoprint-shutdown.sh` will be executed (can be configured using the `-shudtown-script` flag).
 
 The script could then execute a command to turn off a 'smart' power plug.
@@ -200,10 +201,15 @@ for x in 1 2 3 ; do
 done
 ```
 
+# Octoprint API Coverage
+
+PrintAndGo implements the minimum required for printing of the Octoprint [API](https://docs.octoprint.org/en/main/api/index.html)
+Some are just the endpoint with hardcoded response and no logic or validation. 
+The endpoints are coded in [webapi.go](/webapi/webapi.go)
 
 # Licence
 
-GPLv3. See licence file
+GPLv3. See [licence file](/LICENSE.txt)
 
 
 # Acknowledgement
