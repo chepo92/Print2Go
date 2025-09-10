@@ -26,6 +26,17 @@ var (
 	defaultCamera   string
 )
 
+var (
+	flagTTY      string
+	flagBaud     int
+	flagGcode    string
+	flagListen   string
+	flagStorage  string
+	flagShutdown string
+	flagMotd     string
+	flagCamera   string
+)
+
 func init() {
 	if runtime.GOOS == "windows" {
 		defaultTTY = "COM3"
@@ -40,20 +51,20 @@ func init() {
 		defaultMotd = "/dev/null"
 		defaultCamera = "/dev/video0"
 	}
+
+	flagTTY = flag.String("tty", defaultTTY, "Port/tty to use")
+	flagBaud = flag.Int("baud", 115200, "baud rate of -port")
+	flagGcode = flag.String("gcode", "", "file containing gcode")
+	flagListen = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
+	flagStorage = flag.String("storage", defaultStorage, "path to store gcode in")
+	flagShutdown = flag.String("shutdown-script", defaultShutdown, "script to execute to shutdown the printer")
+	flagMotd = flag.String("motd-file", defaultMotd, "Message of the day to display on the UI")
+	flagCamera = flag.String("camera", defaultCamera, "Camera device")
+
 }
 
-var (
-	flagTTY      = flag.String("tty", defaultTTY, "Port/tty to use")
-	flagBaud     = flag.Int("baud", 115200, "baud rate of -port")
-	flagGcode    = flag.String("gcode", "", "file containing gcode")
-	flagListen   = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
-	flagStorage  = flag.String("storage", defaultStorage, "path to store gcode in")
-	flagShutdown = flag.String("shutdown-script", defaultShutdown, "script to execute to shutdown the printer")
-	flagMotd     = flag.String("motd-file", defaultMotd, "Message of the day to display on the UI")
-	flagCamera   = flag.String("camera", defaultCamera, "Camera device")
-)
-
 func main() {
+
 	flag.Parse()
 
 	if *flagTTY == "" {
@@ -79,11 +90,16 @@ func main() {
 
 	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
+	// create webapi without camera for windows build
 	s := webapi.New(localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	log.Printf("Listening on '%s' using serial port '%s'", *flagListen, *flagTTY)
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
 	}
+}
+
+func init() {
+	panic("unimplemented")
 }
 
 // oneshotPrint just prints the specified gcode file.
