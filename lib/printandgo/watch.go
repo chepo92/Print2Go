@@ -16,7 +16,7 @@ func (tp *PrintAndGo) waitReady(okChan chan bool) {
 	case line, statusOk := <-tp.serialIn:
 		if !statusOk {
 			// serial console closed
-			tp.log.Printf("Serial closed")
+			tp.log.Printf("Serial closed before first input")
 			return
 		}
 		tp.log.Printf("Printer sent first input")
@@ -28,7 +28,7 @@ func (tp *PrintAndGo) waitReady(okChan chan bool) {
 			case line, statusOk := <-tp.serialIn:
 				if !statusOk {
 					// serial console closed
-					tp.log.Printf("Serial closed")
+					tp.log.Printf("Serial port not available")
 					return
 				}
 
@@ -52,6 +52,7 @@ func (tp *PrintAndGo) readPrinter(ctx context.Context, cancel context.CancelFunc
 	for {
 		select {
 		case <-ctx.Done():
+			// context finished
 			return
 		case line, statusOk := <-tp.serialIn:
 			// inLoop := false
