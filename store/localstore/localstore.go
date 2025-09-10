@@ -7,17 +7,19 @@ import (
 	"path/filepath"
 )
 
+// LocalStore implements a simple local filesystem storage backend.
 type LocalStore struct {
 	base string
 }
 
+// New creates a new LocalStore instance with the specified base path.
 func New(base string) *LocalStore {
 	return &LocalStore{
 		base: base,
 	}
 }
 
-// UploadFile uploads a gcode file to the specified path in a local store.
+// UploadFile uploads and saves a gcode file to the specified path in a local store.
 func (ls *LocalStore) UploadFile(path, file string, r io.ReadCloser) error {
 	path, file, err := cleanPaths(path, file)
 	if err != nil {
