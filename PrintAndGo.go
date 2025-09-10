@@ -27,14 +27,14 @@ var (
 )
 
 var (
-	flagTTY      string
-	flagBaud     int
-	flagGcode    string
-	flagListen   string
-	flagStorage  string
-	flagShutdown string
-	flagMotd     string
-	flagCamera   string
+	flagTTY      *string
+	flagBaud     *int
+	flagGcode    *string
+	flagListen   *string
+	flagStorage  *string
+	flagShutdown *string
+	flagMotd     *string
+	flagCamera   *string
 )
 
 func init() {
@@ -52,6 +52,9 @@ func init() {
 		defaultCamera = "/dev/video0"
 	}
 
+}
+
+func setDefaultFlags() {
 	flagTTY = flag.String("tty", defaultTTY, "Port/tty to use")
 	flagBaud = flag.Int("baud", 115200, "baud rate of -port")
 	flagGcode = flag.String("gcode", "", "file containing gcode")
@@ -64,6 +67,7 @@ func init() {
 }
 
 func main() {
+	setDefaultFlags()
 
 	flag.Parse()
 
@@ -88,18 +92,15 @@ func main() {
 		Addr: *flagListen,
 	}
 
-	spf := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
+	serialPortReader := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
-	s := webapi.New(localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
-	log.Printf("Listening on '%s' using serial port '%s'", *flagListen, *flagTTY)
+	s := webapi.New(localstore.New(*flagStorage), *flagMotd, serialPortReader, shutdownFunc(*flagShutdown))
+	log.Printf("Listening on '%s' using serial port '%s' at baud %d", *flagListen, *flagTTY, *flagBaud)
+	log.Printf("Storage path is '%s', shutdown script is '%s', motd file is '%s', camera is '%s'", *flagStorage, *flagShutdown, *flagMotd, *flagCamera)
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
 	}
-}
-
-func init() {
-	panic("unimplemented")
 }
 
 // oneshotPrint just prints the specified gcode file.
