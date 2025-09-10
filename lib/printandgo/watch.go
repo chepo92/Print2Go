@@ -21,8 +21,8 @@ func (tp *PrintAndGo) waitReady(okChan chan bool) {
 		}
 		tp.log.Printf("Printer sent first input")
 		tp.log.Printf("Printer says: %q", line)
-		// limpiar el buffer durante 500ms
-		idle := time.NewTimer(500 * time.Millisecond)
+		// limpiar el buffer durante 10s, renovables si es que se recibe algo
+		idle := time.NewTimer(10 * time.Second)
 		for {
 			select {
 			case line, statusOk := <-tp.serialIn:
@@ -32,7 +32,7 @@ func (tp *PrintAndGo) waitReady(okChan chan bool) {
 					return
 				}
 
-				idle.Reset(500 * time.Millisecond)
+				idle.Reset(10 * time.Second)
 				tp.log.Printf("Printer says: %q", line)
 			case <-idle.C:
 				tp.log.Printf("Finished draining startup messages")
