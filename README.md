@@ -39,7 +39,7 @@ If you want to cross compile :
 
 ```shell
 $ CGO_ENABLED=0 GOARCH=arm64 go build . # Example for a raspberry Pi 3
-$ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build . # Example for MIPS Little Endian
+$ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/PrintAndGo . # Example for MIPS Little Endian
 ```
 
 ## Build with docker (usually for dev and cross compile)
@@ -56,6 +56,13 @@ $ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build . # Example for MIPS Little
 
 In the interactive terminal 
 `go build -o ./builds/PrintAndGo .`
+
+
+Copy files back to host (eg. after cross compile, get the binaries)
+`docker cp go-container:/app/builds/PrintAndGo ./builds/PrintAndGo`
+
+Copy files from host to container (eg. developed new code and need to compile in docker), better to delete previous files if made a lot of changes
+`docker cp ./* go-builder:/app/*`
 
 
 ### Cross compile
@@ -146,14 +153,10 @@ interactive shell access
 Excecute command in container 
 `docker exec -it go-container /app/myapp -tty /dev/ttyUSB0`
 
-Copy files back to host (eg. after cross compile, get the binaries)
-
-`docker cp go-container:/app/PrintAndGo ./builds/PrintAndGo`
-
-`docker cp ./helloWorld.go go-builder:/app/helloWorld.go`
-
 Run in OpWRT
-./PAG-le -tty /dev/ttyUSB0 -listen 192.168.8.155:5001
+`./PrintAndGo -tty <USBdevice> -listen <localip:port>`
+Example
+`./PrintAndGo -tty /dev/ttyUSB0 -listen 192.168.8.155:5001`
 
 ### Webcam
 
