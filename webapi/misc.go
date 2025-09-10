@@ -16,7 +16,7 @@ func (wapi *WebApi) error(w http.ResponseWriter, msg string) {
 
 func (wapi *WebApi) readMotd() string {
 	if wapi.motdFile == "" {
-		return "Default: Good morning!"
+		return "PrintAndGo ready!"
 	} else {
 		pl, err := os.ReadFile(wapi.motdFile)
 		if err != nil {

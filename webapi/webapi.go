@@ -46,12 +46,12 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Use(middleware.Logger)
 
 	r.Get("/", indexPage)
-	// Takoprint api
-	r.Get("/takoprint/job/status", wapi.takoJobStatus)
-	r.Post("/takoprint/job/create", wapi.localUpload)
-	r.Post("/takoprint/job/cancel", wapi.takoJobCancel)
-	r.Post("/takoprint/device/shutdown", wapi.takoShutdown)
-	r.Get("/takoprint/gcode/action", wapi.takoEnqueueBuiltin)
+	// PrintAndGo api
+	r.Get("/printandgo/job/status", wapi.pagJobStatus)
+	r.Post("/printandgo/job/create", wapi.localUpload)
+	r.Post("/printandgo/job/cancel", wapi.pagJobCancel)
+	r.Post("/printandgo/device/shutdown", wapi.pagShutdown)
+	r.Get("/printandgo/gcode/action", wapi.pagEnqueueBuiltin)
 
 	// Octoprint fake-compatibility
 	r.Get("/api/version", octoVersionReply)
@@ -81,7 +81,7 @@ func jsonWrite(w http.ResponseWriter, msg interface{}) {
 	w.Write(pl)
 }
 
-func (wapi *WebApi) takoShutdown(w http.ResponseWriter, r *http.Request) {
+func (wapi *WebApi) pagShutdown(w http.ResponseWriter, r *http.Request) {
 	wapi.shutdown()
 	jsonWrite(w, nil)
 }

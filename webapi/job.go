@@ -21,7 +21,7 @@ type jobStatus struct {
 	Motd        string        `json:"motd"`
 }
 
-func (wapi *WebApi) takoJobStatus(w http.ResponseWriter, rq *http.Request) {
+func (wapi *WebApi) pagJobStatus(w http.ResponseWriter, rq *http.Request) {
 	nid, _ := strconv.Atoi(rq.FormValue("id"))
 	id := uint32(nid)
 
@@ -115,7 +115,7 @@ func (wapi *WebApi) octoJobStatus(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, nil)
 }
 
-func (wapi *WebApi) takoJobCancel(w http.ResponseWriter, r *http.Request) {
+func (wapi *WebApi) pagJobCancel(w http.ResponseWriter, r *http.Request) {
 	wapi.task.Cancel()
 	jsonWrite(w, nil)
 }
