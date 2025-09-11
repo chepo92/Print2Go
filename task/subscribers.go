@@ -14,6 +14,7 @@ func (task *Task) Subscribe() chan TaskStatus {
 	return c
 }
 
+// Unsubscribe removes a previously subscribed channel.
 func (task *Task) Unsubscribe(c chan TaskStatus) {
 	task.Lock()
 	defer task.Unlock()
@@ -27,11 +28,12 @@ func (task *Task) Unsubscribe(c chan TaskStatus) {
 	close(c)
 }
 
+// broadcast sends the current status to all subscribers.
 func (task *Task) broadcast() {
 	task.RLock()
 	defer task.RUnlock()
 
-	ts := task.status
+	taskStatus := task.status
 	for _, c := range task.subscribers {
 		c := c // shadow
 		go func() {
@@ -39,7 +41,7 @@ func (task *Task) broadcast() {
 				// chan may be closed; ignored.
 				recover()
 			}()
-			c <- ts
+			c <- taskStatus
 		}()
 	}
 }

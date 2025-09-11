@@ -26,16 +26,23 @@ type TaskStatus struct {
 	LastCommand string
 	// Last reply we received.
 	LastReply string
+	// Error flag
+	Error bool
+	// Error message
+	ErrorMsg string
+	//
+	Cancelled bool
 }
 
+// Task struct manages the print process, holds the PrintAndGo instance, including its status, context, and subscribers for status updates.
 type Task struct {
 	sync.RWMutex
 	// Internal print context.
 	ctx context.Context
 	// Function to cancel the print context.
 	cancel context.CancelFunc
-	// PrintAndGo reference.
-	tp *printandgo.PrintAndGo
+	// PrintAndGo instance struct reference.
+	pagInstance *printandgo.PrintAndGo
 	// Gcode input.
 	gcodeStream store.Stream
 	// Status of the currently running print.
@@ -44,13 +51,16 @@ type Task struct {
 	subscribers map[string]chan TaskStatus
 }
 
+// New creates a new instance of the Task struct. It initializes the subscribers field as an empty map, where the keys are strings and the values are channels of type TaskStatus
 func New() *Task {
 	return &Task{
 		subscribers: make(map[string]chan TaskStatus),
 	}
 }
 
-// Launch starts a new print. Accepts an io.ReadWriteCloser for the serial port and a store.Stream for the gcode input.
+// Launch is a function of the Task struct that starts a new print. Accepts an io.ReadWriteCloser for the serial port and a store.Stream for the gcode input.
+// Creates a new PrintAndGo instance, sets up the context and status,
+// starts the print process and a callback to update the status in a separate goroutine
 func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	task.Lock()
 	defer task.Unlock()
@@ -60,12 +70,14 @@ func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	task.tp = printandgo.New(p, gcs)
+	task.pagInstance = printandgo.New(p, gcs)
 	task.ctx = ctx
 	task.cancel = cancel
 	task.gcodeStream = gcs
 	task.status.DonePercent = 0
 	task.status.Active = true
+	task.status.Error = false
+	task.status.ErrorMsg = ""
 	task.status.Text = "Starting..."
 	task.status.Started = time.Now()
 
@@ -73,10 +85,15 @@ func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	fmt.Println("Size: ", gcs.Size())
 	fmt.Println("Lines: ", gcs.LineCount())
 
+	// This line of code sets up a callback function for the PrintAndGo instance (task.pagInstance). The callback function is task.callback, which will be called by PrintAndGo to update the task status.
+	// allowing PrintAndGo to notify the Task  instance of status updates.
 	// horray for circular dependencies!
-	printandgo.Callback(task.callback)(task.tp)
+	// printandgo publish through the callback function, Task subscribes to those updates and broadcasts them to its own subscribers.
+	// This line effectively links the PrintAndGo instance with the Task instance, enabling real-time status updates during the printing process.
 
-	// semi-empty callback to anounce that we are now active.
+	printandgo.Callback(task.callback)(task.pagInstance)
+
+	// semi-empty callback to anounce subscribers that we are now active.
 	go task.callback(&printandgo.CallbackData{})
 	go task.start()
 	return nil
@@ -99,20 +116,21 @@ func (task *Task) WaitDone() <-chan struct{} {
 	return task.ctx.Done()
 }
 
-// Cancel calls the context cancel function, aborting the task.
+// Cancel is a wrapper for the cancel function. It calls the context cancel function, aborting the task.
 func (task *Task) Cancel() {
 	task.RLock()
 	defer task.RUnlock()
 	if task.cancel == nil {
 		return
 	}
+	task.status.Cancelled = true
 	task.cancel()
 }
 
-// start internally launches the task and sets 'done' once the print finished.
+// start is a wrapper for the PrintAndGo.Start function. It internally launches the task and sets 'done' once the print finished.
 func (task *Task) start() {
-	task.tp.Start(task.ctx)
-	// mark own context as done.
+	// launch the print
+	task.pagInstance.Start(task.ctx)
 
 	// cancel our contex and fire an empty callback
 	task.Cancel()
@@ -126,43 +144,73 @@ func (task *Task) nullify() {
 	defer task.Unlock()
 
 	// nulls *most* of the struct.
-	task.tp = nil
+	task.pagInstance = nil
 	task.ctx = nil
 	task.cancel = nil
 	task.gcodeStream = nil
 }
 
-// called by PrintAndGo to update the status of the task, which is then broadcasted to subscribers
+// Function to update the status of the task, which is then broadcasted to subscribers
 func (task *Task) callback(cbd *printandgo.CallbackData) {
 	var txt string
 
 	task.Lock()
-	// notify subscribers (must happen after unlock popped from stack)
-	defer task.broadcast()
+	// Broadcast/notify subscribers (must happen after unlock popped from stack)
+	defer task.broadcast() // defer keyword is used to schedule a function call to be executed when the surrounding function returns
 	defer task.Unlock()
+
 	defer func() {
 		if txt != task.status.Text {
+			//fmt.Println("Old Status:", task.status.Text)
+			//fmt.Println("New status:", txt)
+			//if task.status.Active { // only update text if the status is active
+			fmt.Println("Status:", txt)
 			task.status.Text = txt
+			//	fmt.Println("Updated status:", task.status.Text)
+			//}
 			// task.tp.Echo(txt) // disable echoing status to printer, it's noisy
-			fmt.Println("Status: ", txt)
+
 		}
 	}()
 
-	if cbd == nil {
+	if cbd == nil && (task.status.Cancelled || task.status.DonePercent < 100) && task.status.Active {
+		if task.pagInstance != nil && task.pagInstance.Err() {
+			task.status.Active = false
+			txt = fmt.Sprintf("Terminated due to error: %s", task.pagInstance.ErrMsg())
+			return
+		}
+		task.status.Active = false
+		txt = "Cancelled"
+		return
+	}
+
+	if cbd == nil && task.status.DonePercent >= 100 && task.status.Active {
 		task.status.Active = false
 		txt = "Done!"
 		return
 	}
 
-	// Keep a couple of seen replies.
-	task.status.LastCommand = cbd.LastSent
-	task.status.LastReply = cbd.Reply
-
-	lines := task.gcodeStream.LineCount()
-	if lines > 0 {
-		task.status.DonePercent = float64(cbd.NumSent) / float64(lines) * 100
+	if cbd != nil && cbd.Error && task.status.Active {
+		task.status.Active = false
+		txt = "Hubo un Error"
+		if cbd.Message != "" {
+			txt = cbd.Message
+		}
+		return
 	}
 
-	// Assemble text and send for broadcasting.
-	txt = fmt.Sprintf("%s | Progress: %.1f%% | Line %d of %d", task.gcodeStream.Name(), task.status.DonePercent, cbd.NumSent, lines)
+	// if cbd is not nil, update status based on callback data
+	if cbd != nil {
+		// Keep a couple of seen replies.
+		task.status.LastCommand = cbd.LastSent
+		task.status.LastReply = cbd.Reply
+
+		lines := task.gcodeStream.LineCount()
+		if lines > 0 {
+			task.status.DonePercent = float64(cbd.NumSent) / float64(lines) * 100
+		}
+
+		// Assemble text and send for broadcasting.
+		txt = fmt.Sprintf("%s | Progress: %.1f%% | Line %d of %d", task.gcodeStream.Name(), task.status.DonePercent, cbd.NumSent, lines)
+	}
 }

@@ -19,6 +19,8 @@ type jobStatus struct {
 	Age         time.Duration `json:"ageSecs"`
 	RunDuration string        `json:"runDuration"`
 	Motd        string        `json:"motd"`
+	Status      string        `json:"status"`
+	Error       bool          `json:"error"`
 }
 
 func (wapi *WebApi) pagJobStatus(w http.ResponseWriter, rq *http.Request) {
@@ -43,6 +45,7 @@ func (wapi *WebApi) pagJobStatus(w http.ResponseWriter, rq *http.Request) {
 				Active:      v.Active,
 				Age:         runDur / time.Second,
 				RunDuration: runDur.Round(time.Second).String(),
+				Error:       v.Error,
 			}
 		}
 

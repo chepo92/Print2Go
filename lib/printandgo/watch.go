@@ -53,15 +53,20 @@ func (tp *PrintAndGo) readPrinter(ctx context.Context, cancel context.CancelFunc
 		select {
 		case <-ctx.Done():
 			// context finished
+			tp.log.Printf("Reader context cancelled, returning")
 			return
 		case line, statusOk := <-tp.serialIn:
 			// inLoop := false
 			if !statusOk {
-				// serial console closed
+				//
+				tp.log.Printf("Serial port is closed, reader will return")
+				//tp.log.Printf("Serial port disconected, firing error callback")
+				//tp.fireErrorCallback("Serial port disconected") // Makes the context to re run
 				return
 			}
 			if line == "ok" {
 				// signal that the printer can accept more data
+				tp.log.Printf("Received ok from printer, unlocking writer")
 				okChan <- true
 			} else { // else the message was not "ok", but something else
 
@@ -75,6 +80,8 @@ func (tp *PrintAndGo) readPrinter(ctx context.Context, cancel context.CancelFunc
 				}
 
 			}
+			// fire callback with the received line, so the subscriber (webserver) can see what the printer says
+			tp.log.Printf("Firing callback with line: %q", line)
 			tp.fireCallback(line)
 
 			// default:

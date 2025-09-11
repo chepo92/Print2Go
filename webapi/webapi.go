@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// WebApi is the macro structure of PrintAndGo, implements and manages the server and web API, handling storage, print tasks, serial port and camera.
 type WebApi struct {
 	storage FileStorage
 	// camera     *camera.Camera // camera disabled for windows build
@@ -39,6 +40,8 @@ func New(store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, 
 	return wapi
 }
 
+// Run starts the web server and binds the routes.
+// returns the http server handle
 func (wapi *WebApi) Run(srv *http.Server) error {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)

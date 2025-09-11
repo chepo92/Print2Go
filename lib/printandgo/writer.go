@@ -15,6 +15,7 @@ func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc
 	for {
 		select {
 		case <-ctx.Done():
+			tp.log.Printf("Writer context cancelled, returning")
 			return
 		case okValue, okChanStatus := <-okChan:
 			// inLoop = false
@@ -69,7 +70,7 @@ func (tp *PrintAndGo) sendCommand(l string) {
 	tp.stats.lastCmd = l
 	tp.Unlock()
 	command := strings.Split(l, ";") // remove Gcode comments if any
-	tp.log.Println("Sending: ", command[0])
+	tp.log.Println("Sending:", command[0])
 	tp.serialOut.Write(append([]byte(l), '\r', '\n'))
 }
 

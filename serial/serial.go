@@ -11,6 +11,7 @@ import (
 )
 
 // RunPipe opens the supplied tty and pipes data between it and stdin/stdout.
+// In other words it is serial monitor (send/receive) for the terminal
 func RunPipe(tty string, baud int) {
 	serialPort, err := serial.OpenPort(&serial.Config{
 		Name:     tty,
