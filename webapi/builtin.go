@@ -21,11 +21,31 @@ var gCodes = map[string][]string{
 		"M104 S210 ; set hotend 210",
 		"M109 S210 ; wait for 210",
 	},
-	"f-move": {
+	"cool": {
+		"M104 S0 ; Turn off hotend heater",
+		"M140 S0 ; Turn off heated bed",
+	},
+	"E+10": {
 		"M117 moving filament",
 		"M104 S210 ; set hotend 210",
 		"M109 S210 ; wait for 210",
-		"G1 E20    ; move 20mm of filament",
+		"G91 ; Set all axes to relative",
+		"G1 E10 F500    ; move 10mm of filament",
+		"G90     ; absolute movement",
+	},
+	"E-10": {
+		"M117 moving filament",
+		"M104 S210 ; set hotend 210",
+		"M109 S210 ; wait for 210",
+		"G91 ; Set all axes to relative",
+		"G1 E-10 F500    ; move 10mm of filament backwards",
+		"G90     ; absolute movement",
+	},
+	"home": {
+		"G28 ; home all axes",
+	},
+	"disableMotors": {
+		"M84 ; disable motors",
 	},
 	"reset": {
 		"M104 S0          ; turn off temperature",

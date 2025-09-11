@@ -134,7 +134,7 @@ Printer is working on: {{ jobStatus.description }}
 <li class="list-group-item"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#uploadDialog">Upload & Print</button></li>
 <li class="list-group-item"><button v-on:click="onBuiltinGcode('z-axis')" type="button" class="btn btn-primary">Lift Z-Axis</button></li>
 <li class="list-group-item"><button v-on:click="onBuiltinGcode('heat')" type="button" class="btn btn-primary">Heat extruder</button></li>
-<li class="list-group-item"><button v-on:click="onBuiltinGcode('f-move')" type="button" class="btn btn-primary">Move filament</button></li>
+<li class="list-group-item"><button v-on:click="onBuiltinGcode('E+10')" type="button" class="btn btn-primary">Move filament</button></li>
 <li class="list-group-item"><button v-on:click="onBuiltinGcode('reset')" type="button" class="btn btn-primary">Reset printer</button></li>
 <li class="list-group-item"><button data-toggle="modal" data-target="#confirmShutdownDialog" type="button" class="btn btn-danger">Run shutdown script</button></li>
 </ul>
