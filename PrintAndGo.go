@@ -37,6 +37,7 @@ var (
 	flagCamera   *string
 )
 
+// Parametros dependientes del sistema operativo
 func init() {
 	if runtime.GOOS == "windows" {
 		defaultTTY = "COM3"
@@ -54,6 +55,7 @@ func init() {
 
 }
 
+// Parametros por defecto de la CLI
 func setDefaultFlags() {
 	flagTTY = flag.String("tty", defaultTTY, "Port/tty to use")
 	flagBaud = flag.Int("baud", 115200, "baud rate of -port")
@@ -66,6 +68,7 @@ func setDefaultFlags() {
 
 }
 
+// Funcion principal
 func main() {
 	setDefaultFlags()
 
@@ -91,13 +94,15 @@ func main() {
 	srv := &http.Server{
 		Addr: *flagListen,
 	}
-
+	// Setup serial port reader
 	serialPortReader := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
+
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
 	s := webapi.New(localstore.New(*flagStorage), *flagMotd, serialPortReader, shutdownFunc(*flagShutdown))
 	log.Printf("Listening on '%s' using serial port '%s' at baud %d", *flagListen, *flagTTY, *flagBaud)
 	log.Printf("Storage path is '%s', shutdown script is '%s', motd file is '%s', camera is '%s'", *flagStorage, *flagShutdown, *flagMotd, *flagCamera)
+
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
 	}
