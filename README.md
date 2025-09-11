@@ -40,6 +40,7 @@ $ go build -o ./builds/PrintAndGo .       # in case of linux
 If you want to cross compile :
 
 ```shell
+$ GOOS=linux GOARCH=amd64 go build -o ./builds/PrintAndGoLinux . # Example for a raspberry Pi 3
 $ CGO_ENABLED=0 GOARCH=arm64 go build . # Example for a raspberry Pi 3
 $ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/PrintAndGo . # Example for MIPS Little Endian
 ```
@@ -60,7 +61,7 @@ $ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/PrintAndGo . # 
 `go build -o ./builds/PrintAndGo .`
 
 5. Once build, copy files back to host (eg. after cross compile, get the binaries)
-`docker cp go-container:/app/builds/PrintAndGo ./builds/PrintAndGo`
+`docker cp go-builder:/app/builds/PrintAndGoLinux ./builds/PrintAndGoLinux`
 
 6. If you need to update the source, copy files from host to container (eg. developed new code and need to compile in docker), better to delete previous files if made a lot of changes
 `docker cp ./* go-builder:/app/*`
