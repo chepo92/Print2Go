@@ -18,6 +18,9 @@ type uploadReplyFiles struct {
 	Local *uploadReplyLocal `json:"local"`
 }
 
+// localUpload handles file uploads to the local storage.
+// If the "print" form value is set to "true", it will enqueue the file for printing after upload.
+// If the "shutdown" form value is set to "true" (or is absent), it will shutdown the hardware after printing.
 func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	f, h, err := rq.FormFile("file")
 	if err != nil {

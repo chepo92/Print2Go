@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+
+	"github.com/chepo92/PrintAndGo/store/bufstore"
 )
 
 func (wapi *WebApi) octoModifyJob(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +106,12 @@ func octoPrinterReplyFake(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, reply)
 }
 
-func octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
+type Commands struct {
+	CmdArray []string `json:"commands"`
+}
+
+// octoPrinterCommand handles G-code commands sent via the OctoPrint-compatible API endpoint. we only support "commands" field in JSON body, with an array of strings, each string being a G-code command.
+func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
@@ -118,13 +126,39 @@ func octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 	// Convert the byte slice to a string (if needed)
 	bodyString := string(bodyBytes)
 
-	fmt.Printf("Received request body 2: %s\n", bodyString)
 	//fmt.Fprintf(w, "Request body received successfully!")
 
 	// We have to do something with the received command here, parse, check and send to printer, wait for OK, etc.
 	// For now we just print it to stdout.
+	fmt.Printf("Received request body: %s\n", bodyString)
 
-	// Octoprint replies with 204 No Content on success.
+	// Unmarshalling JSON/ByteArray into a struct
+	var cmds Commands
+	err = json.Unmarshal(bodyBytes, &cmds)
+	if err != nil {
+		// Handle error
+	}
+	fmt.Println("Commands:")
+	for i := 0; i < len(cmds.CmdArray); i++ {
+		fmt.Println(cmds.CmdArray[i])
+	}
+
+	code := []byte(strings.Join(cmds.CmdArray, "\n") + "\n")
+	instr := bufstore.New(code, "Arbitrary Commands")
+	if err := wapi.enqueuePrint(instr, false); err != nil {
+		wapi.error(w, "error executing internal gcode")
+	}
+
+	// code := []byte(strings.Join(pl, "\n") + "\n")
+	// instr := bufstore.New(code, q)
+
+	// if err := wapi.enqueuePrint(instr, false); err != nil {
+	// 	wapi.error(w, "error executing internal gcode")
+	// } else {
+	// 	// Octoprint replies with 204 No Content on success.
+	// 	w.WriteHeader(http.StatusNoContent)
+	// }
+
 	w.WriteHeader(http.StatusNoContent)
 
 }

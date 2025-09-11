@@ -61,7 +61,7 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Get("/api/settings", octoSettingsReply)
 	r.Post("/api/login", octoLoginReply)
 	r.Get("/api/printer", octoPrinterReplyFake)
-	r.Post("/api/printer/command", octoPrinterCommand)
+	r.Post("/api/printer/command", wapi.octoPrinterCommand)
 	r.Get("/api/job", wapi.octoJobStatus)
 	r.Post("/api/job", wapi.octoModifyJob)
 	r.Post("/api/files/local", wapi.localUpload)
