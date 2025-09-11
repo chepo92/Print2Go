@@ -215,11 +215,11 @@ Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-s
 
 # Planned features/idea
 
-- [] Telegram Notification integration
-- [] Homeassistant integration
-- [] Send custom commands
-- [] WebCamStream
-- [] Implement other OctoPrint API endpoints
+- [ ] Telegram Notification integration
+- [ ] Homeassistant integration
+- [x] Send custom commands
+- [ ] WebCamStream
+- [ ] Implement other OctoPrint API endpoints
 
 
 # Licence
