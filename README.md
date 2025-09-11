@@ -1,7 +1,7 @@
 # PrintAndGo
 
 3D printer host written in Go language
-Convert your router in a 3D printer host with an Octoprint-like API
+Convert any router with a USB port in a 3D printer host, with an Octoprint-like API
 PrintAndGo is a lightweight and simple web based program written in Go to feed gcode to a 3d printer (aka gcode sender, 3d printer host)
 It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to PrintAndGo.
 
