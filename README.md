@@ -26,6 +26,12 @@ It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) b
 
 ![webinterface](/img/printandgo_home_gui.png)
 
+![webinterface](/img/printandgo_upload.png)
+
+![webinterface](/img/printandgo_printing.png)
+
+![webinterface](/img/printandgo_done.png)
+
 ## Build (Win/Linux)
 
 A reasonably recent version of the Go compiler is required to build PrintAndGo (v1.25+) as September 2025
