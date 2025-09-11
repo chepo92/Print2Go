@@ -207,6 +207,11 @@ PrintAndGo implements the minimum required for printing of the Octoprint [API](h
 Some are just the endpoint with hardcoded response and no logic or validation. 
 The endpoints are coded in [webapi.go](/webapi/webapi.go)
 
+# Autostart 
+
+Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-scripts), there is an example file included in the repo to make the script autostart at boot as a service. See: [PrintAndGo-srv](/PrintAndGo-srv), modify it acordingly to your configuration and ip.
+
+
 # Licence
 
 GPLv3. See [licence file](/LICENSE.txt)
