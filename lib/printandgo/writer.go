@@ -8,7 +8,7 @@ import (
 
 // feedPrinter writes a new line to the printer after receiving an okChan interrupt.
 // calls the passed in cancel func once all data was consumed.
-func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc, okChan <-chan bool) {
+func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc, okChan <-chan bool, succeedStreamChan chan bool, writeErrorChan chan bool) {
 	defer cancel()
 	// start := time.Now()
 	// inLoop := false
@@ -22,6 +22,8 @@ func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc
 			if !okChanStatus {
 				// ok channel is closed, return
 				tp.log.Printf("ok channel is closed, returning")
+				// call the error channel
+				writeErrorChan <- true
 				return
 			} // else, we can send more data.
 			if !okValue {
@@ -36,11 +38,21 @@ func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc
 				if !ok {
 					// feed is empty, no more data to send!
 					tp.log.Printf("Feed is empty, no more data to send!")
+					succeedStreamChan <- true
+					// close the feedIn channel to avoid further writes
+					//close(tp.feedIn)
+					// should close the ok channel too?
+					// close(okChan)
+
 					return
 				}
 				// send next line to printer
 				tp.log.Printf("Sending next line to printer: %q", next)
-				tp.sendCommand(next)
+				err := tp.sendCommand(next)
+				if err != nil {
+					tp.log.Printf("Error sending command to printer: %v", err)
+					writeErrorChan <- true
+				}
 			}
 			// default:
 			// 	if !inLoop {
@@ -64,14 +76,18 @@ func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc
 }
 
 // sendCommand writes a command to the printer.
-func (tp *PrintAndGo) sendCommand(l string) {
+func (tp *PrintAndGo) sendCommand(l string) (err error) {
 	tp.Lock()
 	tp.stats.numSent++
 	tp.stats.lastCmd = l
 	tp.Unlock()
 	command := strings.Split(l, ";") // remove Gcode comments if any
 	tp.log.Println("Sending:", command[0])
-	tp.serialOut.Write(append([]byte(l), '\r', '\n'))
+	_, err = tp.serialOut.Write(append([]byte(l), '\r', '\n'))
+	if err != nil {
+		tp.log.Printf("Error writing to serial port: %v", err)
+	}
+	return err
 }
 
 // injectGcode adds a command to the gcode input feed, eventually sending it to the printer.

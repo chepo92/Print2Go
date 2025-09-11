@@ -127,15 +127,33 @@ func (task *Task) Cancel() {
 	task.cancel()
 }
 
+// Cancel is a wrapper for the cancel function. It calls the context cancel function, aborting the task.
+func (task *Task) NormalExit() {
+	task.RLock()
+	defer task.RUnlock()
+	if task.cancel == nil {
+		return
+	}
+	task.cancel()
+}
+
 // start is a wrapper for the PrintAndGo.Start function. It internally launches the task and sets 'done' once the print finished.
 func (task *Task) start() {
 	// launch the print
-	task.pagInstance.Start(task.ctx)
+	err := task.pagInstance.Start(task.ctx)
+	if err != nil {
+		fmt.Println("Error running PrintAndGo:", err)
+		task.Cancel()
+		task.callback(nil)
+		task.nullify()
+	} else {
+		task.NormalExit()
+		task.callback(nil)
+		task.nullify()
+	}
 
 	// cancel our contex and fire an empty callback
-	task.Cancel()
-	task.callback(nil)
-	task.nullify()
+
 }
 
 // nullify clears most of the struct, allowing for a new task to be started.
@@ -174,6 +192,9 @@ func (task *Task) callback(cbd *printandgo.CallbackData) {
 	}()
 
 	if cbd == nil && (task.status.Cancelled || task.status.DonePercent < 100) && task.status.Active {
+		str := fmt.Sprintf("Cancel triggers: %t %f %t", task.status.Cancelled, task.status.DonePercent, task.status.Active)
+		fmt.Println(str)
+
 		if task.pagInstance != nil && task.pagInstance.Err() {
 			task.status.Active = false
 			txt = fmt.Sprintf("Terminated due to error: %s", task.pagInstance.ErrMsg())

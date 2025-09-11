@@ -45,7 +45,7 @@ func (tp *PrintAndGo) waitReady(okChan chan bool) {
 }
 
 // readPrinter reads data from the printer.
-func (tp *PrintAndGo) readPrinter(ctx context.Context, cancel context.CancelFunc, okChan chan bool) {
+func (tp *PrintAndGo) readPrinter(ctx context.Context, cancel context.CancelFunc, okChan chan bool, readErrorChan chan bool) {
 	defer cancel()
 	// start := time.Now()
 	// inLoop := false
@@ -60,6 +60,7 @@ func (tp *PrintAndGo) readPrinter(ctx context.Context, cancel context.CancelFunc
 			if !statusOk {
 				//
 				tp.log.Printf("Serial port is closed, reader will return")
+				readErrorChan <- true
 				//tp.log.Printf("Serial port disconected, firing error callback")
 				//tp.fireErrorCallback("Serial port disconected") // Makes the context to re run
 				return
