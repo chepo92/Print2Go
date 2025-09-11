@@ -16,7 +16,8 @@ It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) b
 - Compatible with any 3D printer with usb port that has some version of Marlin firmware (or accepts standard gcode over serial)
 - Octoprint emulation: Mimics the basic Octoprint API allowing for direct Gcode upload from various slicers (Cura, PrusaSlicer)
 - Custom hooks: PrintAndGo can execute custom scripts after your print is finished (eg. to turn off your printer).
-
+- Simple: Web User interface with just the minimum required operations for printing
+- OctoPrint minimal API implementation: Send custom Gcode, and upload file for inmediate printing
 
 - Brief story: this project is related to [OctoWrt](https://github.com/shivajiva101/OctoWrt), and the addition of the Creality WifiBox (WB01) in [OpenWRT](https://github.com/openwrt/openwrt/pull/19686). OctoPrint is a great sofware and tool, but not very optimized, as is written in python, which is also great but nowadays requires more resources than when it first started, I believe that current code will barely run in a raspberry pi 3 (which was the original target hardware as far as I know). I had previously contributed in a Octoprint-like (or mimic) firmware for embedded devices as ESP8266 or ESP32 see [WirelessPrinting](https://github.com/probonopd/WirelessPrinting), but there was missing sofware solution for the intermediate hardware between embedded devices and mini-pc (like a Raspberry pi). So it needed some leverage, then I found [Takoprint](https://git.sr.ht/~adrian-blx/takoprint), and connected everything together
 
@@ -205,11 +206,20 @@ done
 
 PrintAndGo implements the minimum required for printing of the Octoprint [API](https://docs.octoprint.org/en/main/api/index.html)
 Some are just the endpoint with hardcoded response and no logic or validation. 
-The endpoints are coded in [webapi.go](/webapi/webapi.go)
+The endpoints are coded in [webapi.go](/webapi/webapi.go) and implemented in [octoapi.go](/webapi/octoapi.go)
 
 # Autostart 
 
 Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-scripts), there is an example file included in the repo to make the script autostart at boot as a service. See: [PrintAndGo-srv](/PrintAndGo-srv), modify it acordingly to your configuration and ip.
+
+
+# Planned features/idea
+
+- [] Telegram Notification integration
+- [] Homeassistant integration
+- [] Send custom commands
+- [] WebCamStream
+- [] Implement other OctoPrint API endpoints
 
 
 # Licence
