@@ -61,7 +61,7 @@ func New() *Task {
 // Launch is a function of the Task struct that starts a new print. Accepts an io.ReadWriteCloser for the serial port and a store.Stream for the gcode input.
 // Creates a new PrintAndGo instance, sets up the context and status,
 // starts the print process and a callback to update the status in a separate goroutine
-func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
+func (task *Task) Launch(port io.ReadWriteCloser, gcs store.Stream) error {
 	task.Lock()
 	defer task.Unlock()
 
@@ -70,7 +70,7 @@ func (task *Task) Launch(p io.ReadWriteCloser, gcs store.Stream) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	task.pagInstance = printandgo.New(p, gcs)
+	task.pagInstance = printandgo.New(port, gcs)
 	task.ctx = ctx
 	task.cancel = cancel
 	task.gcodeStream = gcs

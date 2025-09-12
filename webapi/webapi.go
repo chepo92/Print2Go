@@ -28,6 +28,7 @@ type FileStorage interface {
 	ReadFile(path, filename string) (store.Stream, error)
 }
 
+// New creates a new WebApi instance. Starts a new task and returns the instance.
 func New(store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
 	wapi := &WebApi{
 		storage:    store,

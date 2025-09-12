@@ -99,6 +99,8 @@ func (tp *PrintAndGo) Start(ctx context.Context) (err error) {
 	readErrorChan := make(chan bool, 1)     //
 	//sendChan := make(chan bool, 1) // written to by feedPrinter if it has sent data.
 
+	// Force reset
+
 	// give printer some time to become ready.
 	tp.waitReady(okChan)
 
