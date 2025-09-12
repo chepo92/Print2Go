@@ -227,6 +227,7 @@ Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-s
 - [x] Send custom commands
 - [ ] WebCamStream
 - [ ] Implement other OctoPrint API endpoints
+- [ ] Update serial library
 - [ ] Spread the word
       - [ ] Hackaday
       - [ ] Instructables
