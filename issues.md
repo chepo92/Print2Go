@@ -23,3 +23,6 @@ echo:busy: processing
 echo:busy: processing
  T:98.80 /100.00 B:16.21 /0.00 @:47 B@:0 W:0
 ok
+
+
+- Agregar timeout para cuando no se realiza la conexion inicial y se queda pegada
