@@ -70,7 +70,7 @@ $ GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/PrintAndGo . # 
 `docker cp go-builder:/app/builds/PrintAndGoLinux ./builds/PrintAndGoLinux`
 
 6. If you need to update the source, copy files from host to container (eg. developed new code and need to compile in docker), better to delete previous files if made a lot of changes
-`docker cp ./* go-builder:/app/*`
+`docker cp ./ go-builder:/app/`
 
 
 ### Cross compile
