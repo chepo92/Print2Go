@@ -41,8 +41,8 @@ func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
 		Version string `json:"server"`
 		Banner  string `json:"text"`
 	}{
-		API:     "0.2",
-		Version: "0.20220626",
+		API:     "0.0.0",
+		Version: "0.0.0",
 		Banner:  "OctoPrint compatible PrintAndGo api",
 	}
 	jsonWrite(w, reply)
@@ -181,7 +181,7 @@ func octoServerReply(w http.ResponseWriter, rq *http.Request) {
 		Version  string `json:"version"`
 		Safemode string `json:"safemode"`
 	}{
-		Version:  "1.5.0",
+		Version:  "0.0.0",
 		Safemode: "false",
 	}
 	jsonWrite(w, reply)

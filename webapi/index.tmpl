@@ -122,7 +122,7 @@ Printer is working on: {{ jobStatus.description }}
 
 </template>
 <template v-else>
-<div class="alert alert-primary" role="alert">PrintAndGo is idle, serial port is: {{ wapiInfo.Port }}</div>
+<div class="alert alert-primary" role="alert">PrintAndGo is idle, serial port is: {{ wapiInfo.Port }} version: v{{ wapiInfo.Version }}</div>
 
 <ul class="list-group">
 <li class="list-group-item"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#uploadDialog">Upload & Print</button></li>
@@ -139,6 +139,22 @@ Printer is working on: {{ jobStatus.description }}
 </template>
 
 </div>
+
+<footer class="text-center py-4 bg-dark text-light mt-4">
+    <div class="container">
+        <a href="https://github.com/chepo92/PrintAndGo" target="_blank" class="text-light">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.5a13.78 13.78 0 0 0-8 0c-2.73-1.85-3.91-1.5-4.13-1.25A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+            <span class="ml-2">GitHub Repo</span>
+        </a>
+    </div>
+    <div class="container">
+        <span class="text-muted">PrintAndGo &copy; v{{ wapiInfo.Version }}</span>
+    </div>    
+</footer>
+
+
 <script>
 
 new Vue({
@@ -148,7 +164,7 @@ new Vue({
     viewJobStatus: false,
     selectedFile: "",
     statusFp: -1,
-    wapiInfo: {Port: "", BaudRate: 0
+    wapiInfo: {Version: "0.0.0", Port: "", BaudRate: 0
     },
   },
   methods: {
@@ -221,7 +237,7 @@ new Vue({
     setTimeout(this.loadData, 0);
     var vx = this;
     jQuery.ajax({
-        url: '/api/connection', // Replace with the actual endpoint
+        url: '/api/connection',
         method: 'GET',
         success: function(d) {
             vx.wapiInfo.Port = d.current.port;
@@ -230,7 +246,17 @@ new Vue({
         error: function(d) {
             console.log("Error loading PrintAndGo info.");
         }
-    });    
+    });  
+    jQuery.ajax({
+        url: '/api/version',  
+        method: 'GET',
+        success: function(d) {
+            vx.wapiInfo.Version = d.api;
+        },
+        error: function(d) {
+            console.log("Error loading PrintAndGo info.");
+        }
+    });          
   }
 });
 </script>

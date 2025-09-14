@@ -26,6 +26,7 @@ type WebApi struct {
 	motdFile string
 	// function we execute if hardware should be shut down.
 	shutdown func()
+	Version  string
 }
 
 type FileStorage interface {
@@ -51,6 +52,11 @@ func New(store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, 
 func (wapi *WebApi) SetPortBaudRate(port string, baud int) {
 	wapi.SerialPortInfo.Port = port
 	wapi.SerialPortInfo.BaudRate = baud
+}
+
+// SetVersion sets the current version of PrintAndGo
+func (wapi *WebApi) SetVersion(v string) {
+	wapi.Version = v
 }
 
 // Run starts the web server and binds the routes.
