@@ -122,7 +122,7 @@ Printer is working on: {{ jobStatus.description }}
 
 </template>
 <template v-else>
-<div class="alert alert-primary" role="alert">PrintAndGo is idle, serial port is: {{ wapiInfo.Port }} version: v{{ wapiInfo.Version }}</div>
+<div class="alert alert-primary" role="alert">PrintAndGo is idle, serial port is: {{ wapiInfo.Port }} </div>
 
 <ul class="list-group">
 <li class="list-group-item"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#uploadDialog">Upload & Print</button></li>
@@ -136,9 +136,10 @@ Printer is working on: {{ jobStatus.description }}
 <li class="list-group-item"><button v-on:click="onBuiltinGcode('reset')" type="button" class="btn btn-primary">Reset printer</button></li>
 <li class="list-group-item"><button data-toggle="modal" data-target="#confirmShutdownDialog" type="button" class="btn btn-danger">Run shutdown script</button></li>
 </ul>
-</template>
+
 
 </div>
+
 
 <footer class="text-center py-4 bg-dark text-light mt-4">
     <div class="container">
@@ -150,10 +151,12 @@ Printer is working on: {{ jobStatus.description }}
         </a>
     </div>
     <div class="container">
-        <span class="text-muted">PrintAndGo &copy; v{{ wapiInfo.Version }}</span>
+        <span class="text-muted">PrintAndGo v{{ wapiInfo.Version }}</span>
     </div>    
 </footer>
 
+
+</template>
 
 <script>
 
