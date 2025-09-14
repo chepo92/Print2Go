@@ -162,3 +162,164 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 
 }
+
+// To be implemented
+// octoServerReply
+// octoGetConnectionReply
+// octoPostConnectionReply
+// octoLanguagesReply
+// octoPrinterProfilesReply
+// octoSlicingReply
+// octoSystemCommandsReply
+// octoTimelapseReply
+// octoAccessReply
+// octoUtilTestReply
+// octoSetupWizardReply
+
+func octoServerReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		Version  string `json:"version"`
+		Safemode string `json:"safemode"`
+	}{
+		Version:  "1.5.0",
+		Safemode: "false",
+	}
+	jsonWrite(w, reply)
+}
+
+type ConnectionReply struct {
+	Current struct {
+		State          string `json:"state"`
+		Port           string `json:"port"`
+		Baudrate       int    `json:"baudrate"`
+		PrinterProfile string `json:"printerProfile"`
+	} `json:"current"`
+	Options struct {
+		Ports           []string `json:"ports"`
+		Baudrates       []int    `json:"baudrates"`
+		PrinterProfiles []struct {
+			Name string `json:"name"`
+			ID   string `json:"id"`
+		} `json:"printerProfiles"`
+		PortPreference           string `json:"portPreference"`
+		BaudratePreference       int    `json:"baudratePreference"`
+		PrinterProfilePreference string `json:"printerProfilePreference"`
+		Autoconnect              bool   `json:"autoconnect"`
+	} `json:"options"`
+}
+
+func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, rq *http.Request) {
+	reply := ConnectionReply{
+		Current: struct {
+			State          string `json:"state"`
+			Port           string `json:"port"`
+			Baudrate       int    `json:"baudrate"`
+			PrinterProfile string `json:"printerProfile"`
+		}{
+			State:          "To be implemented",
+			Port:           wapi.SerialPortInfo.Port,
+			Baudrate:       wapi.SerialPortInfo.BaudRate,
+			PrinterProfile: "To be implemented",
+		},
+		Options: struct {
+			Ports           []string `json:"ports"`
+			Baudrates       []int    `json:"baudrates"`
+			PrinterProfiles []struct {
+				Name string `json:"name"`
+				ID   string `json:"id"`
+			} `json:"printerProfiles"`
+			PortPreference           string `json:"portPreference"`
+			BaudratePreference       int    `json:"baudratePreference"`
+			PrinterProfilePreference string `json:"printerProfilePreference"`
+			Autoconnect              bool   `json:"autoconnect"`
+		}{
+			Ports:     []string{},
+			Baudrates: []int{},
+			PrinterProfiles: []struct {
+				Name string `json:"name"`
+				ID   string `json:"id"`
+			}{},
+			PortPreference:           "To be defined",
+			BaudratePreference:       0,
+			PrinterProfilePreference: "To be defined",
+			Autoconnect:              false,
+		},
+	}
+	jsonWrite(w, reply)
+}
+
+func octoPostConnectionReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+
+func octoLanguagesReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+func octoPrinterProfilesReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+func octoSlicingReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+func octoSystemCommandsReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+
+func octoTimelapseReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+func octoAccessReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+func octoUtilTestReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}
+
+func octoSetupWizardReply(w http.ResponseWriter, rq *http.Request) {
+	reply := struct {
+		TBI string `json:"tbi"`
+	}{
+		TBI: "To be implemented",
+	}
+	jsonWrite(w, reply)
+}

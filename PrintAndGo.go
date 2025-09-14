@@ -91,6 +91,7 @@ func main() {
 		return
 	}
 
+	// Declare the server
 	srv := &http.Server{
 		Addr: *flagListen,
 	}
@@ -100,9 +101,12 @@ func main() {
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
 	s := webapi.New(localstore.New(*flagStorage), *flagMotd, serialPortReader, shutdownFunc(*flagShutdown))
+	s.SetPortBaudRate(*flagTTY, *flagBaud)
+	// Print some info
 	log.Printf("Listening on '%s' using serial port '%s' at baud %d", *flagListen, *flagTTY, *flagBaud)
 	log.Printf("Storage path is '%s', shutdown script is '%s', motd file is '%s', camera is '%s'", *flagStorage, *flagShutdown, *flagMotd, *flagCamera)
 
+	// Start the server
 	if err := s.Run(srv); err != nil {
 		xdie("server exited: %v", err)
 	}
@@ -111,8 +115,9 @@ func main() {
 // oneshotPrint just prints the specified gcode file.
 func oneshotPrint(tty string, baud int, gcodeFileName string) {
 	log.Printf("Printing: '%s' on %s\n", gcodeFileName, tty)
-	// Open serial port
+	// Create task
 	task := task.New()
+	// Open serial port
 	p, err := serial.NewSerialPortFunc(tty, baud)()
 	if err != nil {
 		xdie("Failed to attach serial port: %v", err)

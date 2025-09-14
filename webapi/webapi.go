@@ -16,9 +16,14 @@ import (
 type WebApi struct {
 	storage FileStorage
 	// camera     *camera.Camera // camera disabled for windows build
-	task       *task.Task
-	serialPort func() (io.ReadWriteCloser, error)
-	motdFile   string
+	task           *task.Task
+	serialPort     func() (io.ReadWriteCloser, error)
+	SerialPortInfo struct {
+		Port     string
+		BaudRate int
+	}
+	// motd file path
+	motdFile string
 	// function we execute if hardware should be shut down.
 	shutdown func()
 }
@@ -41,6 +46,13 @@ func New(store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, 
 	return wapi
 }
 
+// SetPortBaudRate sets the current port and baud rate
+// This is used to update the UI.
+func (wapi *WebApi) SetPortBaudRate(port string, baud int) {
+	wapi.SerialPortInfo.Port = port
+	wapi.SerialPortInfo.BaudRate = baud
+}
+
 // Run starts the web server and binds the routes.
 // returns the http server handle
 func (wapi *WebApi) Run(srv *http.Server) error {
@@ -58,14 +70,25 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Get("/printandgo/gcode/action", wapi.pagEnqueueBuiltin)
 
 	// Octoprint fake-compatibility
-	r.Get("/api/version", octoVersionReply)
-	r.Get("/api/settings", octoSettingsReply)
 	r.Post("/api/login", octoLoginReply)
-	r.Get("/api/printer", octoPrinterReplyFake)
-	r.Post("/api/printer/command", wapi.octoPrinterCommand)
+	r.Get("/api/version", octoVersionReply)
+	r.Get("/api/server", octoServerReply)                 // To be implemented
+	r.Get("/api/connection", wapi.octoGetConnectionReply) // To be implemented
+	r.Post("/api/connection", octoPostConnectionReply)    // To be implemented
+	r.Post("/api/files/local", wapi.localUpload)
 	r.Get("/api/job", wapi.octoJobStatus)
 	r.Post("/api/job", wapi.octoModifyJob)
-	r.Post("/api/files/local", wapi.localUpload)
+	r.Get("/api/languages", octoLanguagesReply) // To be implemented
+	r.Get("/api/printer", octoPrinterReplyFake)
+	r.Post("/api/printer/command", wapi.octoPrinterCommand)
+	r.Get("/api/printerprofiles", octoPrinterProfilesReply) // To be implemented
+	r.Get("/api/settings", octoSettingsReply)
+	r.Get("/api/slicing", octoSlicingReply)                // To be implemented
+	r.Get("/api/system/commands", octoSystemCommandsReply) // To be implemented
+	r.Get("/api/timelapse", octoTimelapseReply)            // To be implemented
+	r.Get("/api/access", octoAccessReply)                  // To be implemented
+	r.Get("/api/util/test", octoUtilTestReply)             // To be implemented
+	r.Get("/setup/wizard", octoSetupWizardReply)           // To be implemented
 
 	// Camera support
 	//r.Get("/camera", cameraPage) // camera disabled for windows build

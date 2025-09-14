@@ -21,7 +21,7 @@ var gCodes = map[string][]string{
 		"M104 S210 ; set hotend 210",
 		"M109 S210 ; wait for 210",
 	},
-	"cool": {
+	"cooldown": {
 		"M104 S0 ; Turn off hotend heater",
 		"M140 S0 ; Turn off heated bed",
 	},
@@ -44,8 +44,8 @@ var gCodes = map[string][]string{
 	"home": {
 		"G28 ; home all axes",
 	},
-	"disableMotors": {
-		"M84 ; disable motors",
+	"disableXYMotors": {
+		"M84 X Y; disable motors",
 	},
 	"reset": {
 		"M104 S0          ; turn off temperature",

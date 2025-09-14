@@ -42,6 +42,10 @@ type SerialPort struct {
 	cleanup func()
 }
 
+// NewSerialPortFunc returns a function that when called opens a serial port connection to the specified tty at the specified baud rate.
+// The returned function returns an io.ReadWriteCloser that can be used to read from and write to the serial port.
+// It does this by spawning a new instance of the current executable with the -serial-pipe flag, which in turn runs the RunPipe function.
+// This allows the serial port to be accessed in a separate process, which can be useful for isolating it from the main application.
 func NewSerialPortFunc(tty string, baud int) func() (io.ReadWriteCloser, error) {
 	return func() (io.ReadWriteCloser, error) {
 		ctx, cancel := context.WithCancel(context.Background())
