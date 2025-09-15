@@ -170,7 +170,7 @@ Run in OpWRT
 Example
 `./PrintAndGo -tty /dev/ttyUSB0 -listen 192.168.8.155:5001`
 
-### Webcam
+## Webcam
 
 Webcam support is WIP, but should mostly work - as long as your webcam shows up on `/dev/video0`.
 
@@ -189,7 +189,7 @@ takopri+   351   301  0 09:01 ?        00:00:00 PrintAndGo -tty /dev/ttyUSB0 -ba
 $ kill -USR1 351  # send SIGUSR1
 ```
 
-### Post print Script
+## Post print Script
 
 PrintAndGo can be configured to run a command after the print finished. Eg. Automatic shutdown
 By default, `/usr/lib/takoprint-shutdown.sh` will be executed (can be configured using the `-shudtown-script` flag).
@@ -228,6 +228,7 @@ Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-s
 - [ ] Telegram Notification integration
 - [ ] Homeassistant integration
 - [x] Send custom commands
+- [ ] Test two or more printers on same device
 - [ ] WebCamStream
 - [ ] Implement other OctoPrint API endpoints
 - [ ] Update serial library
