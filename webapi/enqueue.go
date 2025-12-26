@@ -61,7 +61,7 @@ func (wapi *WebApi) emergencyWatchdog() {
 			// print finished.
 			return
 		case <-time.After(config.EmergencyStallTimeout):
-			wapi.log("*** EMERGENCY SHUTDOWN ***: printer forze for %s", config.EmergencyStallTimeout)
+			wapi.log("*** EMERGENCY SHUTDOWN ***: printer froze for %s", config.EmergencyStallTimeout)
 			wapi.shutdown()
 			return
 		}
