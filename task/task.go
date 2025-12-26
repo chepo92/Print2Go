@@ -18,7 +18,7 @@ type TaskStatus struct {
 	Text string
 	// Percentage printed
 	DonePercent float64
-	// Whether or not we actually do anything.
+	// Whether or not we are actually doing anything.
 	Active bool
 	// Time we started this print
 	Started time.Time
@@ -30,7 +30,7 @@ type TaskStatus struct {
 	Error bool
 	// Error message
 	ErrorMsg string
-	//
+	// Cancellation flag
 	Cancelled bool
 }
 
