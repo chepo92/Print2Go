@@ -118,11 +118,11 @@ func oneshotPrint(tty string, baud int, gcodeFileName string) {
 	// Create task
 	task := task.New()
 	// Open serial port
-	p, err := serial.NewSerialPortFunc(tty, baud)()
+	workingPort, err := serial.NewSerialPortFunc(tty, baud)()
 	if err != nil {
 		xdie("Failed to attach serial port: %v", err)
 	}
-	defer p.Close()
+	defer workingPort.Close()
 	// Open gcode file
 	fh, err := os.Open(gcodeFileName)
 	if err != nil {
@@ -137,7 +137,7 @@ func oneshotPrint(tty string, baud int, gcodeFileName string) {
 	fmt.Printf("Gcode size is: '%d'", gf.Size())
 
 	// Start print task asynchronously
-	err = task.Launch(p, gf)
+	err = task.Launch(workingPort, gf)
 	if err != nil {
 		xdie("Task setup failed: %v", err)
 	}
