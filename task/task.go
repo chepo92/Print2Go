@@ -106,6 +106,13 @@ func (task *Task) Done() bool {
 	return task.ctx == nil || task.ctx.Err() != nil
 }
 
+// Returns true if the task is active.
+func (task *Task) IsActive() bool {
+	task.RLock()
+	defer task.RUnlock()
+	return task.ctx != nil && task.ctx.Err() == nil && task.status.Active
+}
+
 func (task *Task) WaitDone() <-chan struct{} {
 	task.RLock()
 	defer task.RUnlock()
@@ -166,6 +173,18 @@ func (task *Task) nullify() {
 	task.ctx = nil
 	task.cancel = nil
 	task.gcodeStream = nil
+}
+
+// InjectGcode injects a single gcode command into a running print. Returns an error if no task is active.
+func (task *Task) InjectGcode(cmd string) error {
+	task.RLock()
+	defer task.RUnlock()
+	if task.pagInstance == nil {
+		return fmt.Errorf("no active print")
+	}
+	fmt.Println("Task: Injecting gcode:", cmd)
+	task.pagInstance.InjectGcode(cmd)
+	return nil
 }
 
 // Function to update the status of the task, which is then broadcasted to subscribers
