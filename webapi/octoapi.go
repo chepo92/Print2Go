@@ -107,7 +107,9 @@ func octoPrinterReplyFake(w http.ResponseWriter, r *http.Request) {
 }
 
 type Commands struct {
-	CmdArray []string `json:"commands"`
+	//CmdArray []string `json:"commands"`
+	Command  string   `json:"command"`
+	Commands []string `json:"commands"`
 }
 
 // octoPrinterCommand handles G-code commands sent via the OctoPrint-compatible API endpoint. we only support "commands" field in JSON body, with an array of strings, each string being a G-code command.
@@ -118,11 +120,10 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 	// Read the entire body into a byte slice
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
-		fmt.Printf("Error reading request body: %v", err)
+		wapi.error(w, "read body failure")
+		fmt.Printf("Error reading request body: %v\n", err)
 		return
 	}
-
 	// Convert the byte slice to a string (if needed)
 	bodyString := string(bodyBytes)
 
@@ -134,30 +135,68 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
 	// Unmarshalling JSON/ByteArray into a struct
 	var cmds Commands
-	err = json.Unmarshal(bodyBytes, &cmds)
-	if err != nil {
-		// Handle error
+	if err := json.Unmarshal(bodyBytes, &cmds); err != nil {
+		wapi.error(w, "json unmarshal error")
+		fmt.Printf("JSON unmarshal error: %v\n", err)
+		return
 	}
-	fmt.Println("Commands:")
-	for i := 0; i < len(cmds.CmdArray); i++ {
-		fmt.Println(cmds.CmdArray[i])
+	// Rechazar comandos multilinea en command
+	if strings.Contains(cmds.Command, "\n") {
+		wapi.error(w, "multiline command not allowed")
+		return
+	}
+	// Normalizar a una lista única de comandos
+	var cmdList []string
+
+	switch {
+	case cmds.Command != "":
+		cmdList = []string{cmds.Command}
+
+	case len(cmds.Commands) > 0:
+		cmdList = cmds.Commands
+
+	default:
+		wapi.error(w, "no command provided")
+		return
 	}
 
-	code := []byte(strings.Join(cmds.CmdArray, "\n") + "\n")
+	if len(cmdList) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	// Print received commands for debugging
+	fmt.Println("Commands:")
+	for _, c := range cmdList {
+		fmt.Println(c)
+	}
+
+	// If there's an active task, inject commands directly into the running print.
+	if !wapi.task.Done() && wapi.task.IsActive() {
+		fmt.Println("Injecting commands into active task")
+		for _, c := range cmdList {
+			c = strings.TrimSpace(c)
+			if c == "" {
+				continue
+			}
+			if err := wapi.task.InjectGcode(c); err != nil {
+				wapi.error(w, "error injecting gcode")
+				fmt.Printf("InjectGcode failed: %v\n", err)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	fmt.Println("No active task, enqueuing commands as a new print job")
+	// No active task: create a temporary stream and enqueue as a normal print job.
+	code := []byte(strings.Join(cmdList, "\n") + "\n")
 	instr := bufstore.New(code, "Arbitrary Commands")
 	if err := wapi.enqueuePrint(instr, false); err != nil {
 		wapi.error(w, "error executing internal gcode")
+		fmt.Printf("enqueuePrint failed: %v\n", err)
+		return
 	}
-
-	// code := []byte(strings.Join(pl, "\n") + "\n")
-	// instr := bufstore.New(code, q)
-
-	// if err := wapi.enqueuePrint(instr, false); err != nil {
-	// 	wapi.error(w, "error executing internal gcode")
-	// } else {
-	// 	// Octoprint replies with 204 No Content on success.
-	// 	w.WriteHeader(http.StatusNoContent)
-	// }
 
 	w.WriteHeader(http.StatusNoContent)
 
