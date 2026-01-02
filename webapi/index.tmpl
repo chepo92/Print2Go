@@ -119,9 +119,25 @@
 
       <template v-if="jobStatus.active">
         Printer is working on: {{ jobStatus.description }}
-        <br><br>
-        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelDialog">Cancel
-          print</button>
+        <br>
+        <hr>
+
+        <ul class="list-group">
+          <li class="list-group-item">
+            <button v-on:click="onApiPrinterCmd('M290 Z0.1')" type="button"
+              class="btn btn-primary">Z Height +100um</button>          
+          </li>
+          <li class="list-group-item">
+            <button v-on:click="onApiPrinterCmd('M290 Z-0.1')" type="button"
+              class="btn btn-primary">Z Height -100um</button>          
+          </li>
+        </ul>
+
+        <br>
+        <hr>
+        <br>
+        <button type="button" class="btn btn-danger" data-toggle="modal" 
+          data-target="#cancelDialog">Cancel print</button>
       </template>
       <template v-else>
         <b>Printer finished</b>: {{ jobStatus.description }}
@@ -162,7 +178,6 @@
       </ul>
 
     </template>
-
 
     <footer class="text-center py-4 bg-dark text-light mt-4">
       <div class="container">
@@ -240,6 +255,16 @@
             data: { action: arg },
           });
         },
+        onApiPrinterCmd: function (arg) {
+          jQuery.ajax({
+            url: 'api/printer/command',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              command: arg
+            }),            
+          });
+        },        
         onGcodeFileSelected: function (e) {
           this.selectedFile = e.target.files[0];
         },
