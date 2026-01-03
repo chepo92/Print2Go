@@ -61,8 +61,7 @@ func (tp *PrintAndGo) feedPrinter(ctx context.Context, cancel context.CancelFunc
 						// signal that the stream succeeded
 						succeedStreamChan <- true
 
-						return
-					}
+					nextCmd := "G1 X94.197 Y110.368 E5.934947" // TEMPORARY HARDCODED COMMAND FOR TESTING
 					// send next line to printer
 					tp.log.Printf("Sending job gcode: %s", nextCmd)
 					err := tp.sendJob(nextCmd)

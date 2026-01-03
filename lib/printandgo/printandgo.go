@@ -57,8 +57,10 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*PrintAndGo)) *PrintAnd
 	tp := &PrintAndGo{
 		serialOut: s,
 		serialIn:  chanreader.New(s, chanreader.NopFilter()),
-		feedIn:    chanreader.New(f, chanreader.GcodeFilter()),
+		// feedIn:    chanreader.New(f, chanreader.GcodeFilter()),
 	}
+
+	tp.feedIn = make(chan string, 64)
 	for _, opt := range opts {
 		opt(tp)
 	}
