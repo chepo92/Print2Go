@@ -193,7 +193,7 @@ func (task *Task) callback(cbd *printandgo.CallbackData) {
 
 	task.Lock()
 	// Broadcast/notify subscribers (must happen after unlock popped from stack)
-	defer task.broadcast() // defer keyword is used to schedule a function call to be executed when the surrounding function returns
+	// defer task.broadcast() // defer keyword is used to schedule a function call to be executed when the surrounding function returns
 	defer task.Unlock()
 
 	defer func() {
