@@ -23,7 +23,6 @@ type PrintAndGo struct {
 	// gcode input feed
 	feedIn chan string
 
-	outQueue      chan OutCmd
 	priorityQueue chan OutCmd
 
 	// runtime statistics.
@@ -64,7 +63,6 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*PrintAndGo)) *PrintAnd
 		opt(tp)
 	}
 
-	tp.outQueue = make(chan OutCmd, 8) //  buffered channel for output commands
 	tp.priorityQueue = make(chan OutCmd, 4)
 
 	if tp.log == nil {
@@ -75,10 +73,11 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*PrintAndGo)) *PrintAnd
 
 func (tp *PrintAndGo) debugChannels(tag string, okChan chan bool) {
 	tp.log.Printf(
-		"[DEBUG:%s] okChan=%d outQueue=%d feedIn=?",
+		"[DEBUG:%s] okChan=%d priorityQueue=%d feedIn=%d ",
 		tag,
 		len(okChan),
-		len(tp.outQueue),
+		len(tp.priorityQueue),
+		len(tp.feedIn),
 	)
 }
 
@@ -132,27 +131,6 @@ func (tp *PrintAndGo) Start(ctx context.Context) (err error) {
 	// Reads back messages from the printer and signaling need for new input on okChan.
 	rctx, rcancel := context.WithCancel(ctx)
 	go tp.readPrinter(rctx, rcancel, okChan, readErrorChan)
-
-	// Goroutine moves the job feedIn to the outQueue
-	// go func() {
-	// 	for {
-	// 		select {
-	// 		case <-ctx.Done():
-	// 			return
-
-	// 		case line, ok := <-tp.feedIn:
-	// 			if !ok {
-	// 				return
-	// 			}
-	// 			tp.outQueue <- OutCmd{Cmd: line}
-	// 			tp.log.Printf(
-	// 				"[DEBUG] feedIn → outQueue | %q | outQueue=%d/%d",
-	// 				line, len(tp.outQueue), cap(tp.outQueue),
-	// 			)
-
-	// 		}
-	// 	}
-	// }()
 
 	var done bool
 	for !done {
@@ -232,9 +210,9 @@ func (tp *PrintAndGo) InjectGcode(cmd string) {
 	}:
 		tp.log.Printf("[INJECT] Queued PRIORITY gcode: %s", cmd)
 		tp.log.Printf(
-			"[INJECT] Queue | outQueue=%d prioQ=%d",
-			len(tp.outQueue),
+			"[INJECT] Queue | priorityQueue=%d feedIn=%d",
 			len(tp.priorityQueue),
+			len(tp.feedIn),
 		)
 	default:
 		tp.log.Printf("[INJECT] priorityQueue FULL, dropping: %s", cmd)

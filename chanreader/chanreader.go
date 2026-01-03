@@ -2,6 +2,7 @@ package chanreader
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -15,6 +16,7 @@ func New(r io.Reader, filter func(string) bool) chan string {
 			if filter(rs.Text()) {
 				continue
 			}
+			fmt.Printf("Read: %s \n", rs.Text())
 			ch <- rs.Text()
 		}
 		close(ch)
