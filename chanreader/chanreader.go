@@ -19,7 +19,9 @@ func New(r io.Reader, filter func(string) bool) chan string {
 			fmt.Printf("Read: %s \n", rs.Text())
 			ch <- rs.Text()
 		}
+		fmt.Println("chanreader: closed, closing channel")
 		close(ch)
+
 	}()
 	return ch
 }
