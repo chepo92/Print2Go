@@ -21,7 +21,7 @@ func (wapi *WebApi) enqueuePrint(instr store.Stream, shutdown bool) error {
 		return fmt.Errorf("Failed to launch new task: %v", err)
 	}
 
-	go wapi.emergencyWatchdog()
+	//go wapi.emergencyWatchdog()
 
 	go func() {
 		started := time.Now()
