@@ -74,13 +74,13 @@ func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*PrintAndGo)) *PrintAnd
 }
 
 func (tp *PrintAndGo) debugChannels(tag string, okChan chan bool) {
-	tp.log.Printf(
-		"[DEBUG:%s] okChan=%d priorityQueue=%d feedIn=%d ",
-		tag,
-		len(okChan),
-		len(tp.priorityQueue),
-		len(tp.feedIn),
-	)
+	// tp.log.Printf(
+	// 	"[DEBUG:%s] okChan=%d priorityQueue=%d feedIn=%d ",
+	// 	tag,
+	// 	len(okChan),
+	// 	len(tp.priorityQueue),
+	// 	len(tp.feedIn),
+	// )
 }
 
 // Logger configures a custom logger instance.
@@ -114,31 +114,31 @@ func (tp *PrintAndGo) ErrMsg() string {
 // Start feeds input data to the serial output.
 func (tp *PrintAndGo) Start(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()                          // Call cancel when the function returns
-	okChan := make(chan bool, 1)            // written to by readPrinter if it accept more data.
+	defer cancel() // Call cancel when the function returns
+	// okChan := make(chan bool, 1)            // written to by readPrinter if it accept more data.
 	succeedStreamChan := make(chan bool, 1) // written to by feedPrinter if it finished.
 	writeErrorChan := make(chan bool, 1)    //
 	readErrorChan := make(chan bool, 1)     //
 	//sendChan := make(chan bool, 1) // written to by feedPrinter if it has sent data.
 
 	// Force reset
-
+	fmt.Println("Starting Routines")
 	// give printer some time to become ready.
-	tp.waitReady(okChan)
+	//tp.waitReady(okChan)
 
 	// Feeds the printer with input from the specified gcode io stream.
 	wctx, wcancel := context.WithCancel(ctx)
-	go tp.feedPrinter(wctx, wcancel, okChan, succeedStreamChan, writeErrorChan)
+	// go tp.feedPrinter(wctx, wcancel, okChan, succeedStreamChan, writeErrorChan)
 
 	// Reads back messages from the printer and signaling need for new input on okChan.
 	rctx, rcancel := context.WithCancel(ctx)
-	go tp.readPrinter(rctx, rcancel, okChan, readErrorChan)
+	// go tp.readPrinter(rctx, rcancel, okChan, readErrorChan)
 
 	var done bool
 	for !done {
 		select {
 		case <-ctx.Done(): // main context is done, then the for loop exits
-			tp.log.Printf("Main context finished")
+			// tp.log.Printf("Main context finished")
 			// cancel reader contexts
 			rcancel()
 			// cancel writer contexts
@@ -155,7 +155,7 @@ func (tp *PrintAndGo) Start(ctx context.Context) (err error) {
 				fmt.Println("Read error occurred, probably serial port disconected while reading.")
 				tp.err.errFlag = true
 				tp.err.errMsg = "Serial port disconected while reading"
-				tp.log.Printf("Canceling writer context")
+				// tp.log.Printf("Canceling writer context")
 				wcancel()
 			case <-succeedStreamChan:
 				fmt.Println("Stream Gcode succeeded. Reader Context finished.")
@@ -164,10 +164,10 @@ func (tp *PrintAndGo) Start(ctx context.Context) (err error) {
 			}
 
 			// if tp.cb != nil {
-			// 	tp.log.Printf("cbd is not nil, firing error callback")
+			// 	// tp.log.Printf("cbd is not nil, firing error callback")
 			// 	tp.cb(&CallbackData{Error: true, Message: "Serial port disconected"})
 			// }
-			//tp.log.Printf("Serial port disconected, firing error callback")
+			//// tp.log.Printf("Serial port disconected, firing error callback")
 			//tp.fireErrorCallback("Serial port disconected")
 
 		case <-wctx.Done(): // writer context is done
@@ -195,7 +195,7 @@ func (tp *PrintAndGo) Start(ctx context.Context) (err error) {
 		}
 	}
 
-	tp.log.Printf("Task finished, returning.\n")
+	// tp.log.Printf("Task finished, returning.\n")
 
 	if tp.err.errFlag {
 		return errors.New("something went wrong")
@@ -210,13 +210,13 @@ func (tp *PrintAndGo) InjectGcode(cmd string) {
 		Cmd:      cmd,
 		Injected: true,
 	}:
-		tp.log.Printf("[INJECT] Queued PRIORITY gcode: %s", cmd)
-		tp.log.Printf(
-			"[INJECT] Queue | priorityQueue=%d feedIn=%d",
-			len(tp.priorityQueue),
-			len(tp.feedIn),
-		)
+		// tp.log.Printf("[INJECT] Queued PRIORITY gcode: %s", cmd)
+		// tp.log.Printf(
+		// 	"[INJECT] Queue | priorityQueue=%d feedIn=%d",
+		// 	len(tp.priorityQueue),
+		// 	len(tp.feedIn),
+		// )
 	default:
-		tp.log.Printf("[INJECT] priorityQueue FULL, dropping: %s", cmd)
+		// tp.log.Printf("[INJECT] priorityQueue FULL, dropping: %s", cmd)
 	}
 }

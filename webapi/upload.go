@@ -1,6 +1,7 @@
 package webapi
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -65,6 +66,7 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 			wapi.log("Failed to read file we just uploaded: %v", err)
 			return
 		}
+		fmt.Printf("calling enqueuePrint from localUpload\n")
 		if err := wapi.enqueuePrint(instr, shutdown); err != nil {
 			wapi.log("Enqueueing failed: %v", err)
 			return

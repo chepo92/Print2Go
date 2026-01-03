@@ -42,6 +42,7 @@ func (task *Task) broadcast() {
 				recover()
 			}()
 			c <- taskStatus
+			fmt.Printf("Broadcasted status to subscriber: %v\n", taskStatus)
 		}()
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -24,41 +23,31 @@ type jobStatus struct {
 }
 
 func (wapi *WebApi) pagJobStatus(w http.ResponseWriter, rq *http.Request) {
-	nid, _ := strconv.Atoi(rq.FormValue("id"))
-	id := uint32(nid)
 
-	c := wapi.task.Subscribe()
-	defer wapi.task.Unsubscribe(c)
+	v := wapi.task.Snapshot() //
 
-	var js jobStatus
-	for range []int{1, 2} {
-		select {
-		case <-time.After(time.Second * 20):
-		case v := <-c:
-			runDur := time.Now().Sub(v.Started)
-			js = jobStatus{
-				File:        v.File,
-				Done:        v.DonePercent,
-				Desc:        v.Text,
-				Cmd:         v.LastCommand,
-				Reply:       v.LastReply,
-				Active:      v.Active,
-				Age:         runDur / time.Second,
-				RunDuration: runDur.Round(time.Second).String(),
-				Error:       v.Error,
-			}
-		}
+	runDur := time.Since(v.Started)
 
-		js.Motd = wapi.readMotd()
-		js.Hash = 0 // clear in case of previous attempt.
-
-		h := fnv.New32a()
-		h.Write([]byte(fmt.Sprintf("%+v", js)))
-		js.Hash = h.Sum32() & 0xEFFF
-		if js.Hash != id {
-			break
-		}
+	js := jobStatus{
+		File:        v.File,
+		Done:        v.DonePercent,
+		Desc:        v.Text,
+		Cmd:         v.LastCommand,
+		Reply:       v.LastReply,
+		Active:      v.Active,
+		Age:         runDur / time.Second,
+		RunDuration: runDur.Round(time.Second).String(),
+		Error:       v.Error,
+		Motd:        wapi.readMotd(),
 	}
+
+	js.Age = 0
+	js.RunDuration = ""
+
+	h := fnv.New32a()
+	h.Write([]byte(fmt.Sprintf("%+v", js)))
+	js.Hash = h.Sum32() & 0xEFFF
+
 	jsonWrite(w, js)
 }
 

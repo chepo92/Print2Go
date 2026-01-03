@@ -1,26 +1,28 @@
 package chanreader
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 )
 
 // chanreader.New wraps an io.Reader into a channel, closes it on error.
 func New(r io.Reader, filter func(string) bool) chan string {
 	ch := make(chan string)
 	go func() {
-		rs := bufio.NewScanner(r)
-		for rs.Scan() {
-			if filter(rs.Text()) {
-				continue
-			}
-			fmt.Printf("Read: %s \n", rs.Text())
-			ch <- rs.Text()
-		}
+		// rs := bufio.NewScanner(r)
+		// for rs.Scan() {
+		// 	if filter(rs.Text()) {
+		// 		continue
+		// 	}
+		// 	fmt.Printf("Read: %s \n", rs.Text())
+		// 	ch <- rs.Text()
+		// }
+		// fmt.Println("chanreader: closed, closing channel")
+		// close(ch)
+		time.Sleep(10 * time.Millisecond)
 		fmt.Println("chanreader: closed, closing channel")
-		close(ch)
 
 	}()
 	return ch

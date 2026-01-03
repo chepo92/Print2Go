@@ -147,17 +147,18 @@ func (task *Task) NormalExit() {
 // start is a wrapper for the PrintAndGo.Start function. It internally launches the task and sets 'done' once the print finished.
 func (task *Task) start() {
 	// launch the print
-	err := task.pagInstance.Start(task.ctx)
-	if err != nil {
-		fmt.Println("Error running PrintAndGo:", err)
-		task.Cancel()
-		task.callback(nil)
-		task.nullify()
-	} else {
-		task.NormalExit()
-		task.callback(nil)
-		task.nullify()
-	}
+	fmt.Println("Start wrapper called")
+	// err := task.pagInstance.Start(task.ctx)
+	// if err != nil {
+	// 	fmt.Println("Error running PrintAndGo:", err)
+	// 	task.Cancel()
+	// 	task.callback(nil)
+	// 	task.nullify()
+	// } else {
+	// 	task.NormalExit()
+	// 	task.callback(nil)
+	// 	task.nullify()
+	// }
 
 	// cancel our contex and fire an empty callback
 
@@ -253,4 +254,11 @@ func (task *Task) callback(cbd *printandgo.CallbackData) {
 		// Assemble text and send for broadcasting.
 		txt = fmt.Sprintf("%s | Progress: %.1f%% | Line %d of %d", task.gcodeStream.Name(), task.status.DonePercent, cbd.NumSent, lines)
 	}
+}
+
+func (task *Task) Snapshot() TaskStatus {
+	task.RLock()
+	defer task.RUnlock()
+
+	return task.status
 }

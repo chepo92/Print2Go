@@ -31,6 +31,7 @@ func (ls *LocalStore) UploadFile(path, file string, r io.ReadCloser) error {
 	if err != nil {
 		return fmt.Errorf("Failed to create file: %v", err)
 	}
+	fmt.Printf("Created file: %v", err)
 	defer fh.Close()
 	io.Copy(fh, r)
 	return nil

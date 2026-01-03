@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/chepo92/PrintAndGo/store"
 	"github.com/chepo92/PrintAndGo/task"
@@ -16,8 +17,11 @@ import (
 type WebApi struct {
 	storage FileStorage
 	// camera     *camera.Camera // camera disabled for windows build
-	task           *task.Task
-	serialPort     func() (io.ReadWriteCloser, error)
+	task       *task.Task
+	serial     io.ReadWriteCloser
+	serialPort func() (io.ReadWriteCloser, error)
+	serialOnce sync.Once
+
 	SerialPortInfo struct {
 		Port     string
 		BaudRate int
@@ -117,4 +121,18 @@ func jsonWrite(w http.ResponseWriter, msg interface{}) {
 func (wapi *WebApi) pagShutdown(w http.ResponseWriter, r *http.Request) {
 	wapi.shutdown()
 	jsonWrite(w, nil)
+}
+
+func (wapi *WebApi) getSerial() (io.ReadWriteCloser, error) {
+	var err error
+	wapi.serialOnce.Do(func() {
+		wapi.serial, err = wapi.serialPort()
+	})
+	return wapi.serial, err
+}
+
+func (wapi *WebApi) Close() {
+	if wapi.serial != nil {
+		wapi.serial.Close()
+	}
 }

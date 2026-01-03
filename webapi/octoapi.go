@@ -192,6 +192,8 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 	// No active task: create a temporary stream and enqueue as a normal print job.
 	code := []byte(strings.Join(cmdList, "\n") + "\n")
 	instr := bufstore.New(code, "Arbitrary Commands")
+
+	fmt.Printf("calling enqueuePrint from octoPrinterCommand")
 	if err := wapi.enqueuePrint(instr, false); err != nil {
 		wapi.error(w, "error executing internal gcode")
 		fmt.Printf("enqueuePrint failed: %v\n", err)
