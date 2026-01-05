@@ -6,6 +6,13 @@ import (
 	"unicode"
 )
 
+type Line struct {
+	Raw        string
+	Command    string
+	HasCommand bool
+	Params     map[rune]float64
+}
+
 func stripComments(s string) string {
 	if idx := strings.Index(s, ";"); idx >= 0 {
 		s = s[:idx]

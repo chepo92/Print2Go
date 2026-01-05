@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	hwserial "go.bug.st/serial"
 )
 
 // WebApi is the macro structure of PrintAndGo, implements and manages the server and web API, handling storage, print tasks, serial port and camera.
@@ -21,6 +22,7 @@ type WebApi struct {
 	task   *task.Task
 	serial *serialmgr.SerialManager
 
+	selectedFile string
 	// SerialPortInfo struct {
 	// 	Port     string
 	// 	BaudRate int
@@ -42,7 +44,7 @@ type FileStorage interface {
 }
 
 // New creates a new WebApi instance. Starts a new task and returns the instance.
-func New(store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (io.ReadWriteCloser, error), shutdown func()) *WebApi {
+func New(store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (hwserial.Port, error), shutdown func()) *WebApi {
 
 	wapi := &WebApi{
 		storage:  store,
@@ -83,7 +85,7 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Post("/printandgo/device/shutdown", wapi.pagShutdown)
 	r.Get("/printandgo/gcode/action", wapi.pagEnqueueBuiltin)
 
-	// Octoprint fake-compatibility
+	// Octoprint-compatibility
 	r.Post("/api/login", octoLoginReply)
 	r.Get("/api/version", octoVersionReply)
 	r.Get("/api/server", octoServerReply)                   // To be implemented
@@ -91,7 +93,7 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Post("/api/connection", wapi.octoPostConnectionReply) // To be implemented
 	r.Post("/api/files/local", wapi.localUpload)
 	r.Get("/api/job", wapi.octoJobStatus)
-	r.Post("/api/job", wapi.octoModifyJob)
+	r.Post("/api/job", wapi.octoPostJob)
 	r.Get("/api/languages", octoLanguagesReply) // To be implemented
 	r.Get("/api/printer", octoPrinterReplyFake)
 	r.Post("/api/printer/command", wapi.octoPrinterCommand)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	goserial "go.bug.st/serial"
+	hwserial "go.bug.st/serial"
 )
 
 type SerialConfig struct {
@@ -98,7 +98,7 @@ func NewSerialPortFunc() func(SerialConfig) (io.ReadWriteCloser, error) {
 }
 
 func ListPorts() ([]string, error) {
-	ports, err := goserial.GetPortsList()
+	ports, err := hwserial.GetPortsList()
 	if err != nil {
 		return nil, err
 	}
@@ -125,14 +125,14 @@ func ListPorts() ([]string, error) {
 // 	return port, nil
 // }
 
-func OpenSerialPort(cfg SerialConfig) (io.ReadWriteCloser, error) {
-	mode := &goserial.Mode{
+func OpenSerialPort(cfg SerialConfig) (hwserial.Port, error) {
+	mode := &hwserial.Mode{
 		BaudRate: cfg.BaudRate,
 	}
 
 	fmt.Printf("[SERIAL] Opening port=%s baud=%d\n", cfg.Port, cfg.BaudRate)
 
-	port, err := goserial.Open(cfg.Port, mode)
+	port, err := hwserial.Open(cfg.Port, mode)
 	if err != nil {
 		return nil, err
 	}

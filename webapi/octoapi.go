@@ -9,29 +9,45 @@ import (
 	"github.com/chepo92/PrintAndGo/serial"
 )
 
-func (wapi *WebApi) octoModifyJob(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+func (wapi *WebApi) octoPostJob(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	buf, err := io.ReadAll(r.Body)
 	if err != nil {
 		wapi.error(w, "read body failure")
 		return
 	}
-	defer r.Body.Close()
 
-	rq := struct {
+	var rq struct {
 		Command string `json:"command"`
-	}{}
+	}
 	if err := json.Unmarshal(buf, &rq); err != nil {
 		wapi.error(w, "json unmarshal error")
 		return
 	}
 
-	// Currently we don't support anything else.
-	if rq.Command != "cancel" {
+	switch rq.Command {
+
+	case "start":
+		// Debe existir un archivo seleccionado / listo para imprimir
+		// enqueuePrint ya maneja stream + task
+		// if err := wapi.enqueueLastUploaded(false); err != nil {
+		// 	wapi.error(w, err.Error())
+		// 	return
+		// }
+
+		w.WriteHeader(http.StatusNoContent)
+		return
+
+	case "cancel":
+		wapi.task.Cancel()
+		w.WriteHeader(http.StatusNoContent)
+		return
+
+	default:
 		wapi.error(w, "invalid command")
 		return
 	}
-	wapi.task.Cancel()
 }
 
 func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
@@ -111,7 +127,7 @@ type Commands struct {
 	Commands []string `json:"commands"`
 }
 
-// octoPrinterCommand handles G-code commands sent via the OctoPrint-compatible API endpoint. we only support "commands" field in JSON body, with an array of strings, each string being a G-code command.
+// octoPrinterCommand handles G-code commands sent via the OctoPrint-compatible API endpoint
 func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()

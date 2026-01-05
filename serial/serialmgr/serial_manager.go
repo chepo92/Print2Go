@@ -8,7 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/chepo92/PrintAndGo/gcode"
 	"github.com/chepo92/PrintAndGo/serial"
+	hwserial "go.bug.st/serial"
 )
 
 type SerialState int
@@ -42,13 +44,16 @@ func (s SerialState) String() string {
 type SerialManager struct {
 	mu    sync.Mutex
 	state SerialState
-	port  io.ReadWriteCloser
-	cfg   serial.SerialConfig
 
-	openFn func(serial.SerialConfig) (io.ReadWriteCloser, error)
+	port hwserial.Port
+	cfg  serial.SerialConfig
 
-	sendQ  chan GcodeCmd
-	stopCh chan struct{}
+	openFn func(serial.SerialConfig) (hwserial.Port, error)
+
+	sendQ     chan GcodeCmd
+	priorityQ chan GcodeCmd
+	inbound   chan string
+	stopCh    chan struct{}
 }
 
 type GcodeCmd struct {
@@ -57,12 +62,14 @@ type GcodeCmd struct {
 	RespCh   chan error // nil si no se espera ACK
 }
 
-func New(openFn func(serial.SerialConfig) (io.ReadWriteCloser, error)) *SerialManager {
+func New(openFn func(serial.SerialConfig) (hwserial.Port, error)) *SerialManager {
 	return &SerialManager{
-		state:  Disconnected,
-		openFn: openFn,
-		sendQ:  make(chan GcodeCmd, 100),
-		stopCh: make(chan struct{}),
+		state:     Disconnected,
+		openFn:    openFn,
+		sendQ:     make(chan GcodeCmd, 16),
+		priorityQ: make(chan GcodeCmd, 8),
+		inbound:   make(chan string, 16),
+		stopCh:    make(chan struct{}),
 	}
 }
 
@@ -77,45 +84,101 @@ func (sm *SerialManager) onAck() {
 
 func (sm *SerialManager) writeLoop() {
 	for {
-		select {
-		case cmd := <-sm.sendQ:
-			fmt.Printf("[SERIAL] >> %s\n", cmd.Line)
+		var cmd GcodeCmd
 
-			_, err := sm.port.Write([]byte(cmd.Line + "\n"))
-			if err != nil && cmd.RespCh != nil {
+		select {
+		case cmd = <-sm.priorityQ:
+			// prioridad absoluta
+		default:
+			select {
+			case cmd = <-sm.priorityQ:
+			case cmd = <-sm.sendQ:
+			case <-sm.stopCh:
+				return
+			}
+		}
+
+		fmt.Printf("[SERIAL] >> %s\n", cmd.Line)
+
+		_, err := sm.port.Write([]byte(cmd.Line + "\n"))
+		if err != nil {
+			if cmd.RespCh != nil {
 				cmd.RespCh <- err
 			}
-
-		case <-sm.stopCh:
-			return
+			continue
 		}
+
+		for {
+			select {
+			case line := <-sm.inbound:
+				if strings.HasPrefix(line, "ok") {
+					if cmd.RespCh != nil {
+						cmd.RespCh <- nil
+					}
+					goto nextCmd
+				}
+
+				if strings.HasPrefix(line, "error") {
+					if cmd.RespCh != nil {
+						cmd.RespCh <- fmt.Errorf(line)
+					}
+					goto nextCmd
+				}
+
+				fmt.Printf("[SERIAL] .. %s\n", line)
+
+			case <-sm.stopCh:
+				return
+			}
+		}
+
+	nextCmd:
 	}
 }
 
 func (sm *SerialManager) readLoop() {
 	scanner := bufio.NewScanner(sm.port)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		fmt.Printf("[SERIAL] << %s\n", line)
+	for {
+		select {
+		case <-sm.stopCh:
+			fmt.Printf("[SERIAL] readLoop stopped\n")
+			return
 
-		if strings.HasPrefix(line, "ok") {
-			sm.onAck()
+		default:
+			if !scanner.Scan() {
+				if err := scanner.Err(); err != nil {
+					fmt.Printf("[SERIAL] Read error: %v\n", err)
+				} else {
+					fmt.Printf("[SERIAL] Port closed\n")
+				}
+				return
+			}
+
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" {
+				continue
+			}
+
+			fmt.Printf("[SERIAL] << %s\n", line)
+
+			// Enviar línea cruda al sistema
+			select {
+			case sm.inbound <- line:
+			default:
+				fmt.Printf("[SERIAL] inbound buffer full, dropping line\n")
+			}
 		}
 	}
 }
 
 func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	sm.mu.Lock()
-	defer sm.mu.Unlock()
-
-	// if sm.state == SerialConnected || sm.state == SerialConnecting {
-	// 	return nil
-	// }
 
 	fmt.Printf("[SERIAL] Connect requested: port=%s baud=%d state=%v\n", cfg.Port, cfg.BaudRate, sm.state)
 	if sm.state == Connected || sm.state == Connecting {
 		fmt.Printf("[SERIAL] Connect ignored (already connected/connecting)\n")
+		sm.mu.Unlock()
 		return nil
 	}
 
@@ -123,22 +186,37 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	sm.cfg = cfg
 	fmt.Printf("[SERIAL] State -> CONNECTING\n")
 
+	sm.mu.Unlock()
+
+	// --- IO pesado FUERA del lock ---
 	port, err := sm.openFn(cfg)
 	if err != nil {
+		sm.mu.Lock()
 		sm.state = Error
+		sm.mu.Unlock()
+
 		fmt.Printf("[SERIAL] Open FAILED: %v\n", err)
 		return err
 	}
 
+	sm.mu.Lock()
 	sm.port = port
 	sm.state = Connected
 
+	// inicialización de canales (ETAPA D)
+	sm.sendQ = make(chan GcodeCmd, 32)
+	sm.priorityQ = make(chan GcodeCmd, 8)
+	sm.inbound = make(chan string, 128)
+	sm.stopCh = make(chan struct{})
+
 	fmt.Printf("[SERIAL] Open OK, state -> CONNECTED\n")
+	sm.mu.Unlock()
 
 	go sm.writeLoop()
 	go sm.readLoop()
 
 	return nil
+
 }
 
 func (sm *SerialManager) Disconnect() error {
@@ -195,39 +273,6 @@ func (sm *SerialManager) GetConfig() serial.SerialConfig {
 	return sm.cfg
 }
 
-func (sm *SerialManager) SendGcode(line string, wait bool) error {
-	var ch chan error
-
-	if wait {
-		ch = make(chan error, 1)
-		pendingAck = ch
-	}
-
-	sm.sendQ <- GcodeCmd{
-		Line:   line,
-		RespCh: ch,
-	}
-
-	if wait {
-		return <-ch
-	}
-	return nil
-}
-
-func (sm *SerialManager) SendGcodeFile(r io.Reader) error {
-	lines, err := serial.ParseGcode(r)
-	if err != nil {
-		return err
-	}
-
-	for _, l := range lines {
-		if err := sm.SendGcode(l, true); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (sm *SerialManager) SendLine(line string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
@@ -243,6 +288,73 @@ func (sm *SerialManager) SendLine(line string) error {
 	}
 
 	return nil
+}
+
+func (sm *SerialManager) SendGcode(line string, wait bool) error {
+	sm.mu.Lock()
+	if sm.state != Connected {
+		sm.mu.Unlock()
+		return fmt.Errorf("Serial not connected")
+	}
+	sm.mu.Unlock()
+
+	var resp chan error
+	if wait {
+		resp = make(chan error, 1)
+	}
+
+	sm.sendQ <- GcodeCmd{
+		Line:   strings.TrimSpace(line),
+		RespCh: resp,
+	}
+
+	if wait {
+		return <-resp
+	}
+	return nil
+}
+
+func (sm *SerialManager) SendGcodePriority(line string, wait bool) error {
+	sm.mu.Lock()
+	if sm.state != Connected {
+		sm.mu.Unlock()
+		return ErrNotConnected
+	}
+	sm.mu.Unlock()
+
+	var resp chan error
+	if wait {
+		resp = make(chan error, 1)
+	}
+
+	sm.priorityQ <- GcodeCmd{
+		Line:   strings.TrimSpace(line),
+		RespCh: resp,
+	}
+
+	if wait {
+		return <-resp
+	}
+	return nil
+}
+
+func (sm *SerialManager) SendGcodeFile(r io.Reader) error {
+	scanner := bufio.NewScanner(r)
+
+	for scanner.Scan() {
+		raw := scanner.Text()
+		parsed := gcode.ParseLine(raw)
+		fmt.Printf("[SendGcodeFile] Sending G-code %s\n", parsed.Raw)
+		if !parsed.HasCommand {
+			continue
+		}
+
+		if err := sm.SendGcode(parsed.Raw, true); err != nil {
+			return err
+		}
+	}
+
+	return scanner.Err()
 }
 
 func (sm *SerialManager) IsConnected() bool {

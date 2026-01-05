@@ -23,6 +23,16 @@ type uploadReplyFiles struct {
 // If the "print" form value is set to "true", it will enqueue the file for printing after upload.
 // If the "shutdown" form value is set to "true" (or is absent), it will shutdown the hardware after printing.
 func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
+
+	// Dump the request to a byte slice
+	// requestDump, err := httputil.DumpRequest(rq, true) // 'true' includes the body
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf("Error dumping request: %v", err), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// fmt.Printf("--- Incoming Request ---\n%s\n", string(requestDump))
+
 	f, h, err := rq.FormFile("file")
 	if err != nil {
 		wapi.error(w, "Failed to parse form data")
