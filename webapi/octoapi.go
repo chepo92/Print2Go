@@ -2,13 +2,11 @@ package webapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/chepo92/PrintAndGo/serial"
-	"github.com/chepo92/PrintAndGo/store/bufstore"
 )
 
 func (wapi *WebApi) octoModifyJob(w http.ResponseWriter, r *http.Request) {
@@ -118,44 +116,31 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	// Read the entire body into a byte slice
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		wapi.error(w, "read body failure")
-		fmt.Printf("Error reading request body: %v\n", err)
 		return
 	}
-	// Convert the byte slice to a string (if needed)
-	bodyString := string(bodyBytes)
 
-	//fmt.Fprintf(w, "Request body received successfully!")
-
-	// We have to do something with the received command here, parse, check and send to printer, wait for OK, etc.
-	// For now we just print it to stdout.
-	fmt.Printf("Received request body: %s\n", bodyString)
-
-	// Unmarshalling JSON/ByteArray into a struct
 	var cmds Commands
 	if err := json.Unmarshal(bodyBytes, &cmds); err != nil {
 		wapi.error(w, "json unmarshal error")
-		fmt.Printf("JSON unmarshal error: %v\n", err)
 		return
 	}
-	// Rechazar comandos multilinea en command
+
+	// Rechazar comandos multilinea en "command"
 	if strings.Contains(cmds.Command, "\n") {
 		wapi.error(w, "multiline command not allowed")
 		return
 	}
-	// Normalizar a una lista única de comandos
-	var cmdList []string
 
+	// Normalizar comandos
+	var cmdList []string
 	switch {
 	case cmds.Command != "":
 		cmdList = []string{cmds.Command}
-
 	case len(cmds.Commands) > 0:
 		cmdList = cmds.Commands
-
 	default:
 		wapi.error(w, "no command provided")
 		return
@@ -165,40 +150,24 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	// Print received commands for debugging
-	fmt.Println("Commands:")
+
+	// Verificar conexión serial
+	if !wapi.serial.IsConnected() {
+		wapi.error(w, "serial not connected")
+		return
+	}
+
+	// FASE ACTUAL: envío directo, sin task, sin parser
 	for _, c := range cmdList {
-		fmt.Println(c)
-	}
-
-	// If there's an active task, inject commands directly into the running print.
-	if !wapi.task.Done() && wapi.task.IsActive() {
-		fmt.Println("Injecting commands into active task")
-		for _, c := range cmdList {
-			c = strings.TrimSpace(c)
-			if c == "" {
-				continue
-			}
-			if err := wapi.task.InjectGcode(c); err != nil {
-				wapi.error(w, "error injecting gcode")
-				fmt.Printf("InjectGcode failed: %v\n", err)
-				return
-			}
+		c = strings.TrimSpace(c)
+		if c == "" {
+			continue
 		}
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
 
-	fmt.Println("No active task, enqueuing commands as a new print job")
-	// No active task: create a temporary stream and enqueue as a normal print job.
-	code := []byte(strings.Join(cmdList, "\n") + "\n")
-	instr := bufstore.New(code, "Arbitrary Commands")
-
-	fmt.Printf("calling enqueuePrint from octoPrinterCommand")
-	if err := wapi.enqueuePrint(instr, false); err != nil {
-		wapi.error(w, "error executing internal gcode")
-		fmt.Printf("enqueuePrint failed: %v\n", err)
-		return
+		if err := wapi.serial.SendLine(c); err != nil {
+			wapi.error(w, err.Error())
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

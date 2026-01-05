@@ -32,6 +32,10 @@ type WebApi struct {
 	Version  string
 }
 
+type GcodeCommandRequest struct {
+	Command string `json:"command"`
+}
+
 type FileStorage interface {
 	UploadFile(path, filename string, r io.ReadCloser) error
 	ReadFile(path, filename string) (store.Stream, error)
