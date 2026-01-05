@@ -13,18 +13,27 @@ func (wapi *WebApi) enqueuePrint(instr store.Stream, shutdown bool) error {
 
 	fmt.Printf("Get serial \n")
 
-	_, err := wapi.getSerial()
+	//_, err := wapi.getSerial()
 	fmt.Printf("Open serial port w err''\n")
-	if err != nil {
-		instr.Close()
-		return fmt.Errorf("Failed to open serial port: %v", err)
-	}
+	// port, err := wapi.serial.Port()
+	// if err != nil {
+	// 	instr.Close()
+	// 	return fmt.Errorf("serial not connected")
+	// }
+	// if err != nil {
+	// 	instr.Close()
+	// 	return fmt.Errorf("Failed to open serial port: %v", err)
+	// }
 
 	fmt.Printf("Launch task '' \n")
 	// if err := wapi.task.Launch(s, instr); err != nil {
 	// 	instr.Close()
 	// 	s.Close()
 	// 	return fmt.Errorf("Failed to launch new task: %v", err)
+	// }
+	// if err := wapi.task.Launch(port, instr); err != nil {
+	// 	instr.Close()
+	// 	return err
 	// }
 
 	//go wapi.emergencyWatchdog()

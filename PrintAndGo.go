@@ -8,13 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"time"
 
 	// "github.com/chepo92/PrintAndGo/camera"  // Not compatible in windows
 
 	"github.com/chepo92/PrintAndGo/serial"
 	"github.com/chepo92/PrintAndGo/store/localstore"
-	"github.com/chepo92/PrintAndGo/task"
 	"github.com/chepo92/PrintAndGo/webapi"
 )
 
@@ -78,30 +76,31 @@ func main() {
 		xdie("-tty Port must be specified")
 	}
 	if *flagGcode != "" {
-		oneshotPrint(*flagTTY, *flagBaud, *flagGcode)
+		//oneshotPrint(*flagTTY, *flagBaud, *flagGcode)
+
 		return
 	}
 
-	if os.Args[len(os.Args)-1] == ":serial-pipe" {
-		serial.RunPipe(*flagTTY, *flagBaud)
-		return
-	}
-	if os.Args[len(os.Args)-1] == ":camera-pipe" {
-		// camera.RunPipe(*flagCamera, 640, 480) // will not call this func/lib in win
-		return
-	}
+	// if os.Args[len(os.Args)-1] == ":serial-pipe" {
+	// 	serial.RunPipe(*flagTTY, *flagBaud)
+	// 	return
+	// }
+	// if os.Args[len(os.Args)-1] == ":camera-pipe" {
+	// 	// camera.RunPipe(*flagCamera, 640, 480) // will not call this func/lib in win
+	// 	return
+	// }
 
 	// Declare the server
 	srv := &http.Server{
 		Addr: *flagListen,
 	}
 	// Setup serial port reader
-	serialPortReader := serial.NewSerialPortFunc(*flagTTY, *flagBaud)
+	//serialPortReader := serial.NewSerialPortFunc()
 
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
-	s := webapi.New(localstore.New(*flagStorage), *flagMotd, serialPortReader, shutdownFunc(*flagShutdown))
-	s.SetPortBaudRate(*flagTTY, *flagBaud)
+	s := webapi.New(localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, shutdownFunc(*flagShutdown))
+	//s.SetPortBaudRate(*flagTTY, *flagBaud)
 	// Print some info
 	log.Printf("Listening on '%s' using serial port '%s' at baud %d", *flagListen, *flagTTY, *flagBaud)
 	log.Printf("Storage path is '%s', shutdown script is '%s', motd file is '%s', camera is '%s'", *flagStorage, *flagShutdown, *flagMotd, *flagCamera)
@@ -113,40 +112,40 @@ func main() {
 }
 
 // oneshotPrint just prints the specified gcode file.
-func oneshotPrint(tty string, baud int, gcodeFileName string) {
-	log.Printf("Printing: '%s' on %s\n", gcodeFileName, tty)
-	// Create task
-	task := task.New()
-	// Open serial port
-	workingPort, err := serial.NewSerialPortFunc(tty, baud)()
-	if err != nil {
-		xdie("Failed to attach serial port: %v", err)
-	}
-	defer workingPort.Close()
-	// Open gcode file
-	fh, err := os.Open(gcodeFileName)
-	if err != nil {
-		xdie("Failed to open gcode: %v", err)
-	}
-	defer fh.Close()
-	// Create gcode file stream object
-	gf, err := localstore.FromFilehandle(fh)
-	if err != nil {
-		xdie("Failed to open stream: %v", err)
-	}
-	fmt.Printf("Gcode size is: '%d'", gf.Size())
+// func oneshotPrint(tty string, baud int, gcodeFileName string) {
+// 	log.Printf("Printing: '%s' on %s\n", gcodeFileName, tty)
+// 	// Create task
+// 	task := task.New()
+// 	// Open serial port
+// 	workingPort, err := serial.NewSerialPortFunc()
+// 	if err != nil {
+// 		xdie("Failed to attach serial port: %v", err)
+// 	}
+// 	defer workingPort.Close()
+// 	// Open gcode file
+// 	fh, err := os.Open(gcodeFileName)
+// 	if err != nil {
+// 		xdie("Failed to open gcode: %v", err)
+// 	}
+// 	defer fh.Close()
+// 	// Create gcode file stream object
+// 	gf, err := localstore.FromFilehandle(fh)
+// 	if err != nil {
+// 		xdie("Failed to open stream: %v", err)
+// 	}
+// 	fmt.Printf("Gcode size is: '%d'", gf.Size())
 
-	// Start print task asynchronously
-	err = task.Launch(workingPort, gf)
-	if err != nil {
-		xdie("Task setup failed: %v", err)
-	}
-	// Wait until done
-	for !task.Done() {
-		time.Sleep(time.Second)
-		log.Printf("Working...\n")
-	}
-}
+// 	// Start print task asynchronously
+// 	err = task.Launch(workingPort, gf)
+// 	if err != nil {
+// 		xdie("Task setup failed: %v", err)
+// 	}
+// 	// Wait until done
+// 	for !task.Done() {
+// 		time.Sleep(time.Second)
+// 		log.Printf("Working...\n")
+// 	}
+// }
 
 func shutdownFunc(script string) func() {
 	return func() {

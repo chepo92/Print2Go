@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"sync"
 
+	"github.com/chepo92/PrintAndGo/serial"
+	"github.com/chepo92/PrintAndGo/serial/serialmgr"
 	"github.com/chepo92/PrintAndGo/store"
 	"github.com/chepo92/PrintAndGo/task"
 
@@ -17,15 +18,13 @@ import (
 type WebApi struct {
 	storage FileStorage
 	// camera     *camera.Camera // camera disabled for windows build
-	task       *task.Task
-	serial     io.ReadWriteCloser
-	serialPort func() (io.ReadWriteCloser, error)
-	serialOnce sync.Once
+	task   *task.Task
+	serial *serialmgr.SerialManager
 
-	SerialPortInfo struct {
-		Port     string
-		BaudRate int
-	}
+	// SerialPortInfo struct {
+	// 	Port     string
+	// 	BaudRate int
+	// }
 	// motd file path
 	motdFile string
 	// function we execute if hardware should be shut down.
@@ -39,12 +38,13 @@ type FileStorage interface {
 }
 
 // New creates a new WebApi instance. Starts a new task and returns the instance.
-func New(store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, error), shutdown func()) *WebApi {
+func New(store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (io.ReadWriteCloser, error), shutdown func()) *WebApi {
+
 	wapi := &WebApi{
-		storage:    store,
-		serialPort: serial,
-		motdFile:   motdFile,
-		shutdown:   shutdown,
+		storage:  store,
+		serial:   serialmgr.New(openSerial),
+		motdFile: motdFile,
+		shutdown: shutdown,
 		//camera:     camera.New(camdev), // camera disabled for windows build
 		task: task.New(),
 	}
@@ -53,10 +53,10 @@ func New(store FileStorage, motdFile string, serial func() (io.ReadWriteCloser, 
 
 // SetPortBaudRate sets the current port and baud rate
 // This is used to update the UI.
-func (wapi *WebApi) SetPortBaudRate(port string, baud int) {
-	wapi.SerialPortInfo.Port = port
-	wapi.SerialPortInfo.BaudRate = baud
-}
+// func (wapi *WebApi) SetPortBaudRate(port string, baud int) {
+// 	wapi.serial.SetPort(port)
+// 	wapi.serial.SetBaudRate(baud)
+// }
 
 // SetVersion sets the current version of PrintAndGo
 func (wapi *WebApi) SetVersion(v string) {
@@ -82,9 +82,9 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	// Octoprint fake-compatibility
 	r.Post("/api/login", octoLoginReply)
 	r.Get("/api/version", octoVersionReply)
-	r.Get("/api/server", octoServerReply)                 // To be implemented
-	r.Get("/api/connection", wapi.octoGetConnectionReply) // To be implemented
-	r.Post("/api/connection", octoPostConnectionReply)    // To be implemented
+	r.Get("/api/server", octoServerReply)                   // To be implemented
+	r.Get("/api/connection", wapi.octoGetConnectionReply)   // To be implemented
+	r.Post("/api/connection", wapi.octoPostConnectionReply) // To be implemented
 	r.Post("/api/files/local", wapi.localUpload)
 	r.Get("/api/job", wapi.octoJobStatus)
 	r.Post("/api/job", wapi.octoModifyJob)
@@ -123,16 +123,31 @@ func (wapi *WebApi) pagShutdown(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, nil)
 }
 
-func (wapi *WebApi) getSerial() (io.ReadWriteCloser, error) {
-	var err error
-	wapi.serialOnce.Do(func() {
-		wapi.serial, err = wapi.serialPort()
-	})
-	return wapi.serial, err
-}
+// func (wapi *WebApi) getSerial() (io.ReadWriteCloser, error) {
+// 	var err error
+// 	wapi.serialOnce.Do(func() {
+// 		wapi.serial, err = wapi.serialPort()
+// 	})
+// 	return wapi.serial, err
+// }
 
-func (wapi *WebApi) Close() {
-	if wapi.serial != nil {
-		wapi.serial.Close()
+// func (wapi *WebApi) Close() {
+// 	if wapi.serial != nil {
+// 		wapi.serial.Close()
+// 	}
+// }
+
+func octoStateFromSerial(s serialmgr.SerialState) string {
+	switch s {
+	case serialmgr.Disconnected:
+		return "Closed"
+	case serialmgr.Connecting:
+		return "Connecting"
+	case serialmgr.Connected:
+		return "Operational"
+	case serialmgr.Error:
+		return "Error"
+	default:
+		return "Unknown"
 	}
 }

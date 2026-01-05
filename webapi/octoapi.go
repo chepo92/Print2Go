@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/chepo92/PrintAndGo/serial"
 	"github.com/chepo92/PrintAndGo/store/bufstore"
 )
 
@@ -249,7 +250,15 @@ type ConnectionReply struct {
 	} `json:"options"`
 }
 
-func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, rq *http.Request) {
+func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, r *http.Request) {
+	state := wapi.serial.State()
+	cfg := wapi.serial.Config()
+
+	ports, err := serial.ListPorts()
+	if err != nil {
+		ports = []string{} // fallback seguro
+	}
+
 	reply := ConnectionReply{
 		Current: struct {
 			State          string `json:"state"`
@@ -257,10 +266,10 @@ func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, rq *http.Reque
 			Baudrate       int    `json:"baudrate"`
 			PrinterProfile string `json:"printerProfile"`
 		}{
-			State:          "To be implemented",
-			Port:           wapi.SerialPortInfo.Port,
-			Baudrate:       wapi.SerialPortInfo.BaudRate,
-			PrinterProfile: "To be implemented",
+			State:          octoStateFromSerial(state),
+			Port:           cfg.Port,
+			Baudrate:       cfg.BaudRate,
+			PrinterProfile: "_default",
 		},
 		Options: struct {
 			Ports           []string `json:"ports"`
@@ -274,28 +283,62 @@ func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, rq *http.Reque
 			PrinterProfilePreference string `json:"printerProfilePreference"`
 			Autoconnect              bool   `json:"autoconnect"`
 		}{
-			Ports:     []string{},
-			Baudrates: []int{},
+			Ports:     ports,
+			Baudrates: []int{115200, 250000, 230400, 57600, 38400, 19200, 9600},
 			PrinterProfiles: []struct {
 				Name string `json:"name"`
 				ID   string `json:"id"`
-			}{},
-			PortPreference:           "To be defined",
-			BaudratePreference:       0,
-			PrinterProfilePreference: "To be defined",
+			}{
+				{Name: "Default", ID: "_default"},
+			},
+			PortPreference:           cfg.Port,
+			BaudratePreference:       cfg.BaudRate,
+			PrinterProfilePreference: "_default",
 			Autoconnect:              false,
 		},
 	}
+
 	jsonWrite(w, reply)
 }
 
-func octoPostConnectionReply(w http.ResponseWriter, rq *http.Request) {
-	reply := struct {
-		TBI string `json:"tbi"`
-	}{
-		TBI: "To be implemented",
+type ConnectionCommand struct {
+	Command  string `json:"command"`
+	Port     string `json:"port,omitempty"`
+	Baudrate int    `json:"baudrate,omitempty"`
+}
+
+func (wapi *WebApi) octoPostConnectionReply(w http.ResponseWriter, rq *http.Request) {
+	var cmd ConnectionCommand
+
+	if err := json.NewDecoder(rq.Body).Decode(&cmd); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
 	}
-	jsonWrite(w, reply)
+
+	switch cmd.Command {
+	case "connect":
+		cfg := serial.SerialConfig{
+			Port:     cmd.Port,
+			BaudRate: cmd.Baudrate,
+		}
+
+		if err := wapi.serial.Connect(cfg); err != nil {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
+
+	case "disconnect":
+		if err := wapi.serial.Disconnect(); err != nil {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
+
+	default:
+		http.Error(w, "unknown command", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func octoLanguagesReply(w http.ResponseWriter, rq *http.Request) {
