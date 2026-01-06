@@ -2,6 +2,8 @@ package serialmgr
 
 import (
 	"bufio"
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -351,6 +353,57 @@ func (sm *SerialManager) SendGcodeFile(r io.Reader) error {
 
 		if err := sm.SendGcode(parsed.Raw, true); err != nil {
 			return err
+		}
+	}
+
+	return scanner.Err()
+}
+
+func (sm *SerialManager) SendGcodeFileWithContext(
+	ctx context.Context,
+	r io.Reader,
+	onLine func(sent int, total int, cmd string, reply string),
+) error {
+
+	scanner := bufio.NewScanner(r)
+
+	// opcional: contar líneas antes
+	lines := 0
+	buf, _ := io.ReadAll(r)
+	for _, b := range bytes.Split(buf, []byte("\n")) {
+		if len(bytes.TrimSpace(b)) > 0 {
+			lines++
+		}
+	}
+
+	// recreamos reader
+	scanner = bufio.NewScanner(bytes.NewReader(buf))
+
+	sent := 0
+
+	for scanner.Scan() {
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		raw := scanner.Text()
+		parsed := gcode.ParseLine(raw)
+		fmt.Printf("[SendGcodeFileWCtx] Sending G-code %s\n", parsed.Raw)
+		if !parsed.HasCommand {
+			continue
+		}
+
+		if err := sm.SendGcode(parsed.Raw, true); err != nil {
+			return err
+		}
+
+		sent++
+
+		if onLine != nil {
+			onLine(sent, lines, parsed.Raw, "")
 		}
 	}
 
