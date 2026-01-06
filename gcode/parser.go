@@ -1,6 +1,8 @@
 package gcode
 
 import (
+	"bufio"
+	"io"
 	"strconv"
 	"strings"
 	"unicode"
@@ -97,4 +99,18 @@ func serializeParams(p map[rune]float64) string {
 			strconv.FormatFloat(v, 'f', 4, 64), "0"), "."))
 	}
 	return b.String()
+}
+
+func ParseGcode(r io.Reader) ([]string, error) {
+	var lines []string
+	scanner := bufio.NewScanner(r)
+
+	for scanner.Scan() {
+		l := strings.TrimSpace(scanner.Text())
+		if l == "" || strings.HasPrefix(l, ";") {
+			continue
+		}
+		lines = append(lines, l)
+	}
+	return lines, scanner.Err()
 }
