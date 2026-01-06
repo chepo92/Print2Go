@@ -7,7 +7,7 @@ import (
 
 	"github.com/chepo92/PrintAndGo/serial"
 	"github.com/chepo92/PrintAndGo/serial/serialmgr"
-	"github.com/chepo92/PrintAndGo/store"
+	store "github.com/chepo92/PrintAndGo/storage"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

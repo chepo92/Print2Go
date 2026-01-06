@@ -8,7 +8,7 @@ import (
 
 	"github.com/chepo92/PrintAndGo/lib/printandgo"
 	"github.com/chepo92/PrintAndGo/serial/serialmgr"
-	"github.com/chepo92/PrintAndGo/store"
+	store "github.com/chepo92/PrintAndGo/storage"
 )
 
 // JobStatus mantiene el estado actual de un trabajo.
