@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/chepo92/PrintAndGo/gcode"
-	"github.com/chepo92/PrintAndGo/store"
+	store "github.com/chepo92/PrintAndGo/storage"
 )
 
 // LocalStoreFile implements a file stream from a local file.
