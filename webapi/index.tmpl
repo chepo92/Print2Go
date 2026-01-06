@@ -103,8 +103,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button v-on:click="onGcodeStartUpload" class="btn btn-primary" :disabled="!this.selectedFile">Upload and
-              print</button>
+            <button v-on:click="onGcodeStartUpload" class="btn btn-primary" :disabled="!this.selectedFile">Upload and print</button>
           </div>
         </div>
       </div>
@@ -118,18 +117,22 @@
       </div>
 
       <template v-if="jobStatus.active">
-        Printer is working on: {{ jobStatus.description }}
+        Printer is working on: {{ jobStatus.file}} 
+        <br>
+        State: {{ jobStatus.displayStatus}}        
+        <br>
+        {{ jobStatus.printReport}}
         <br>
         <hr>
 
         <ul class="list-group">
           <li class="list-group-item">
-            <button v-on:click="onApiPrinterCmd('M290 Z0.1')" type="button"
-              class="btn btn-primary">Z Height +100µm</button>          
+            <button v-on:click="onApiPrinterCmd('M290 Z0.025')" type="button"
+              class="btn btn-primary">Z Height +25µm</button>          
           </li>
           <li class="list-group-item">
-            <button v-on:click="onApiPrinterCmd('M290 Z-0.1')" type="button"
-              class="btn btn-primary">Z Height -100µm</button>          
+            <button v-on:click="onApiPrinterCmd('M290 Z-0.025')" type="button"
+              class="btn btn-primary">Z Height -25µm</button>          
           </li>
         </ul>
 
@@ -140,7 +143,8 @@
           data-target="#cancelDialog">Cancel print</button>
       </template>
       <template v-else>
-        <b>Printer finished</b>: {{ jobStatus.description }}
+        File: {{ jobStatus.file}} 
+        <b>State</b>: {{ jobStatus.displayStatus }}
         <br><br>
         <button type="button" class="btn btn-secondary" v-on:click="viewJobStatus=false">Dismiss</button>
       </template>
@@ -152,9 +156,47 @@
 
     </template>
     <template v-else>
-      <div class="alert alert-primary" role="alert">PrintAndGo is idle, serial port is: {{ wapiInfo.Port }} </div>
+
+    <div class="card mb-3">
+      <div class="card-body d-flex align-items-center gap-2">
+
+        <strong>Printer:</strong>
+
+        <span
+          class="badge"
+          :class="serial.state === 'Operational' ? 'bg-success' : 'bg-secondary'">
+          {{ serial.state }}
+        </span>
+
+        
+      </div>
+
+      <div class="card-body d-flex align-items-center gap-2">
+
+        <select class="form-select form-select-sm w-auto"
+                v-model="serial.selectedPort"
+                :disabled="serial.state === 'Operational'">
+          <option v-for="p in serial.ports" :value="p">{{ p }}</option>
+        </select>
+
+        <button v-if="serial.state !== 'Operational'"
+                class="btn btn-sm btn-primary"
+                @click="onSerialConnect">
+          Connect
+        </button>
+
+        <button v-else
+                class="btn btn-sm btn-danger"
+                @click="onSerialDisconnect">
+          Disconnect
+        </button>
+
+      </div>      
+    </div>      
+      <div class="alert alert-primary" role="alert">PrintAndGo is idle, serial port is: {{ serial.Port }} </div>
 
       <ul class="list-group">
+      
         <li class="list-group-item"><button type="button" class="btn btn-primary" data-toggle="modal"
             data-target="#uploadDialog">Upload & Print</button></li>
         <li class="list-group-item"><button v-on:click="onBuiltinGcode('home')" type="button"
@@ -209,10 +251,65 @@
         selectedFile: "",
         statusFp: -1,
         wapiInfo: {
-          Version: "0.0.1", Port: "", BaudRate: 0
+          Version: ""
         },
+        serial: {
+          state: "Closed",
+          ports: [],
+          selectedPort: "",
+          baudrate: 115200
+        }       
       },
       methods: {
+        loadConnection: function () {
+          let vx = this;
+          jQuery.ajax({
+            url: '/api/connection',
+            method: 'GET',
+            success: function (d) {
+              vx.serial.state = d.current.state;
+              vx.serial.ports = d.options.ports;
+              vx.serial.selectedPort = d.current.port || d.options.ports[0] || "";
+              vx.serial.baudrate = d.current.baudrate || 115200;
+
+              vx.serial.Port = d.current.port;
+              vx.serial.BaudRate = d.current.baudrate;
+            }
+          });
+        },
+        onSerialConnect: function () {
+          let vx = this;
+          jQuery.ajax({
+            url: '/api/connection',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              command: "connect",
+              port: vx.serial.selectedPort,
+              baudrate: vx.serial.baudrate
+            }),
+            success: function () {
+              vx.loadConnection();
+            },
+            error: function (d) {
+              alert(d.responseText);
+            }
+          });
+        },
+        onSerialDisconnect: function () {
+          let vx = this;
+          jQuery.ajax({
+            url: '/api/connection',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              command: "disconnect"
+            }),
+            success: function () {
+              vx.loadConnection();
+            }
+          });
+        },              
         loadData: function () {
           vx = this;
           jQuery.ajax({
@@ -228,7 +325,7 @@
               if (d.active == true) {
                 vx.viewJobStatus = true;
               }
-              
+              setTimeout(vx.loadData, 1000);
             },
           });
         },
@@ -290,18 +387,9 @@
       },
       mounted: function () {
         setTimeout(this.loadData, 0);
+        this.loadConnection();
         var vx = this;
-        jQuery.ajax({
-          url: '/api/connection',
-          method: 'GET',
-          success: function (d) {
-            vx.wapiInfo.Port = d.current.port;
-            vx.wapiInfo.BaudRate = d.current.baudrate;
-          },
-          error: function (d) {
-            console.log("Error loading PrintAndGo info.");
-          }
-        });
+
         jQuery.ajax({
           url: '/api/version',
           method: 'GET',

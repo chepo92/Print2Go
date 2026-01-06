@@ -2,12 +2,123 @@ package webapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/chepo92/PrintAndGo/job"
 	"github.com/chepo92/PrintAndGo/serial"
 )
+
+func (wapi *WebApi) octoGetJobStatus(w http.ResponseWriter, r *http.Request) {
+	c := wapi.jobManager.Subscribe()
+	defer wapi.jobManager.Unsubscribe(c)
+
+	select {
+	case <-time.After(5 * time.Second):
+		v := wapi.jobManager.Snapshot()
+		jsonWrite(w, buildOctoJobReply(v))
+		return
+
+	case v := <-c:
+		jsonWrite(w, buildOctoJobReply(v))
+		return
+	}
+}
+
+func buildOctoJobReply(v job.JobStatus) any {
+	state := "Operational"
+
+	printTime := 0
+	printTimeLeft := 0
+	filepos := 0
+	completion := 0.0
+
+	if v.Active {
+		state = "Printing"
+		printTime = int(time.Since(v.StartTime).Seconds())
+		completion = v.DonePercent / 100.0
+
+		if v.DonePercent > 1 {
+			printTimeLeft = int(
+				float64(printTime) * (100.0 - v.DonePercent) / v.DonePercent,
+			)
+		}
+	}
+
+	return struct {
+		Job struct {
+			File struct {
+				Name   string `json:"name"`
+				Origin string `json:"origin"`
+				Size   int64  `json:"size"`
+				Date   int64  `json:"date"`
+			} `json:"file"`
+			EstimatedPrintTime int `json:"estimatedPrintTime"`
+			Filament           map[string]struct {
+				Length float64 `json:"length"`
+				Volume float64 `json:"volume"`
+			} `json:"filament"`
+		} `json:"job"`
+		Progress struct {
+			Completion    float64 `json:"completion"`
+			Filepos       int     `json:"filepos"`
+			PrintTime     int     `json:"printTime"`
+			PrintTimeLeft int     `json:"printTimeLeft"`
+		} `json:"progress"`
+		State string `json:"state"`
+	}{
+		Job: struct {
+			File struct {
+				Name   string `json:"name"`
+				Origin string `json:"origin"`
+				Size   int64  `json:"size"`
+				Date   int64  `json:"date"`
+			} `json:"file"`
+			EstimatedPrintTime int `json:"estimatedPrintTime"`
+			Filament           map[string]struct {
+				Length float64 `json:"length"`
+				Volume float64 `json:"volume"`
+			} `json:"filament"`
+		}{
+			File: struct {
+				Name   string `json:"name"`
+				Origin string `json:"origin"`
+				Size   int64  `json:"size"`
+				Date   int64  `json:"date"`
+			}{
+				Name:   v.File,
+				Origin: "local",
+				Size:   v.FileSize,
+				Date:   v.FileDate,
+			},
+			EstimatedPrintTime: v.EstimatedTime,
+			Filament: map[string]struct {
+				Length float64 `json:"length"`
+				Volume float64 `json:"volume"`
+			}{
+				"tool0": {
+					Length: v.FilamentLength,
+					Volume: v.FilamentVolume,
+				},
+			},
+		},
+		Progress: struct {
+			Completion    float64 `json:"completion"`
+			Filepos       int     `json:"filepos"`
+			PrintTime     int     `json:"printTime"`
+			PrintTimeLeft int     `json:"printTimeLeft"`
+		}{
+			Completion:    completion,
+			Filepos:       filepos,
+			PrintTime:     printTime,
+			PrintTimeLeft: printTimeLeft,
+		},
+		State: state,
+	}
+}
 
 func (wapi *WebApi) octoPostJob(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -40,7 +151,8 @@ func (wapi *WebApi) octoPostJob(w http.ResponseWriter, r *http.Request) {
 		return
 
 	case "cancel":
-		wapi.task.Cancel()
+		fmt.Printf("Ocotapi cancel \n")
+		//wapi.task.Cancel()
 		w.WriteHeader(http.StatusNoContent)
 		return
 
@@ -56,8 +168,8 @@ func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
 		Version string `json:"server"`
 		Banner  string `json:"text"`
 	}{
-		API:     "0.0.0",
-		Version: "0.0.0",
+		API:     "0.0.2",
+		Version: "0.0.2",
 		Banner:  "OctoPrint compatible PrintAndGo api",
 	}
 	jsonWrite(w, reply)
@@ -89,35 +201,67 @@ func octoLoginReply(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, reply)
 }
 
-type fakeFlags struct {
-	Operational bool `json:"operational"`
-	Ready       bool `json:"ready"`
-	Error       bool `json:"error"`
-	CoErr       bool `json:"closedOrError"`
-	Pausing     bool `json:"pausing"`
-	Paused      bool `json:"paused"`
-	Printing    bool `json:"printing"`
-	Cancelling  bool `json:"cancelling"`
+type octoPrinterReply struct {
+	Temperature map[string]any `json:"temperature"`
+	SD          struct {
+		Ready bool `json:"ready"`
+	} `json:"sd"`
+	State struct {
+		Text  string       `json:"text"`
+		Flags printerFlags `json:"flags"`
+	} `json:"state"`
 }
 
-func octoPrinterReplyFake(w http.ResponseWriter, r *http.Request) {
-	reply := struct {
-		State struct {
-			Text  string    `json:"text"`
-			Flags fakeFlags `json:"flags"`
-		} `json:"state"`
-	}{
-		State: struct {
-			Text  string    `json:"text"`
-			Flags fakeFlags `json:"flags"`
-		}{
-			Text: "operational",
-			Flags: fakeFlags{
-				Operational: true,
-				Ready:       true,
-			},
-		},
+type printerFlags struct {
+	Operational   bool `json:"operational"`
+	Paused        bool `json:"paused"`
+	Printing      bool `json:"printing"`
+	Cancelling    bool `json:"cancelling"`
+	Pausing       bool `json:"pausing"`
+	SdReady       bool `json:"sdReady"`
+	Error         bool `json:"error"`
+	Ready         bool `json:"ready"`
+	ClosedOrError bool `json:"closedOrError"`
+}
+
+func (wapi *WebApi) octoPrinterReply(w http.ResponseWriter, r *http.Request) {
+
+	connected := wapi.serial.IsConnected()
+	job := wapi.jobManager.Snapshot()
+
+	var text string
+	flags := printerFlags{}
+
+	switch {
+	case !connected:
+		text = "Closed"
+		flags.ClosedOrError = true
+
+	case job.Error:
+		text = "Error"
+		flags.Error = true
+		flags.ClosedOrError = true
+
+	case job.Active:
+		text = "Printing"
+		flags.Printing = true
+
+	default:
+		text = "Operational"
+		flags.Operational = true
+		flags.Ready = true
 	}
+
+	flags.SdReady = connected
+
+	reply := octoPrinterReply{
+		Temperature: map[string]any{}, // vacío pero presente
+	}
+
+	reply.SD.Ready = flags.SdReady
+	reply.State.Text = text
+	reply.State.Flags = flags
+
 	jsonWrite(w, reply)
 }
 
@@ -137,6 +281,8 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 		wapi.error(w, "read body failure")
 		return
 	}
+
+	fmt.Printf("[octoPrinterCommand] Body: %s\n", string(bodyBytes))
 
 	var cmds Commands
 	if err := json.Unmarshal(bodyBytes, &cmds); err != nil {
@@ -169,9 +315,12 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
 	// Verificar conexión serial
 	if !wapi.serial.IsConnected() {
+		fmt.Printf("[octoPrinterCommand] Serial not connected\n")
 		wapi.error(w, "serial not connected")
 		return
 	}
+
+	fmt.Printf("[octoPrinterCommand] Sending G-code %s\n", cmdList)
 
 	// FASE ACTUAL: envío directo, sin task, sin parser
 	for _, c := range cmdList {
@@ -192,8 +341,7 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
 // To be implemented
 // octoServerReply
-// octoGetConnectionReply
-// octoPostConnectionReply
+
 // octoLanguagesReply
 // octoPrinterProfilesReply
 // octoSlicingReply
@@ -236,8 +384,8 @@ type ConnectionReply struct {
 }
 
 func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, r *http.Request) {
-	state := wapi.serial.State()
-	cfg := wapi.serial.Config()
+	state := wapi.serial.GetState()
+	cfg := wapi.serial.GetConfig()
 
 	ports, err := serial.ListPorts()
 	if err != nil {

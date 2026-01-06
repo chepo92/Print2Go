@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/chepo92/PrintAndGo/chanreader"
+	"github.com/chepo92/PrintAndGo/gcode"
 	"github.com/chepo92/PrintAndGo/store"
 )
 
@@ -46,7 +46,7 @@ func FromFilehandle(fh *os.File) (store.Stream, error) {
 		return nil, err
 	}
 	// Count lines
-	numLines, err := validLineCounter(fh, chanreader.GcodeFilter())
+	numLines, err := validLineCounter(fh, gcode.GcodeFilter())
 	if err != nil {
 		fh.Close()
 		return nil, err

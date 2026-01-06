@@ -13,17 +13,32 @@ import (
 
 // JobStatus mantiene el estado actual de un trabajo.
 type JobStatus struct {
-	File        string  `json:"file"`
-	DonePercent float64 `json:"donePct"`
-	Description string  `json:"description"`
-	LastCommand string  `json:"lastcmd"`
-	LastReply   string  `json:"lastreply"`
-	Active      bool    `json:"active"`
-	RunDuration string  `json:"runDuration"`
-	Error       bool    `json:"error"`
-	Motd        string  `json:"motd"`
-	// Time we started this print
-	StarTime time.Time `json:"startTime"`
+	// File
+	File        string `json:"file"`
+	Description string `json:"description"`
+	FileSize    int64  `json:"fileSize"` // bytes
+	FileDate    int64  `json:"fileDate"` // unix timestamp
+
+	// Estimations
+	EstimatedTime  int     `json:"estimatedTime"`  // s
+	FilamentLength float64 `json:"filamentLength"` // mm
+	FilamentVolume float64 `json:"filamentVolume"` // cm3
+
+	// Info
+	LastCommand string `json:"lastcmd"`
+	LastReply   string `json:"lastreply"`
+	Active      bool   `json:"active"`
+	Error       bool   `json:"error"`
+
+	// Job progress
+	DisplayStatus string    `json:"displayStatus"`
+	StartTime     time.Time `json:"startTime"`
+	DonePercent   float64   `json:"donePct"`
+	RunDuration   string    `json:"runDuration"`
+
+	PrintReport string `json:"printReport"`
+
+	Motd string `json:"motd"`
 }
 
 // type jobStatus struct {
@@ -82,15 +97,22 @@ func (jm *JobManager) StartPrint(gcs store.Stream) error {
 	// jm.gcodeStream = gcs
 
 	jm.status = JobStatus{
-		File:        gcs.Name(),
-		DonePercent: 0,
-		Description: "Starting...",
-		Active:      true,
-		Error:       false,
-		RunDuration: "",
-		LastCommand: "",
-		LastReply:   "",
-		StarTime:    time.Now(),
+		File:           gcs.Name(),
+		DonePercent:    0,
+		Description:    "",
+		Active:         true,
+		Error:          false,
+		RunDuration:    "",
+		LastCommand:    "",
+		LastReply:      "",
+		StartTime:      time.Now(),
+		EstimatedTime:  0,
+		FilamentLength: 0,
+		FilamentVolume: 0,
+		Motd:           "",
+		FileSize:       0,
+		FileDate:       0,
+		DisplayStatus:  "Printing...",
 	}
 
 	// jm.pagInstance = printandgo.New(nil, gcs) // puerto ya manejado dentro de PrintAndGo
@@ -125,6 +147,9 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 			if total > 0 {
 				jm.status.DonePercent = float64(sent) / float64(total) * 100
 			}
+			jm.status.PrintReport = fmt.Sprintf("Progress: %.1f%% | Line %d of %d", jm.status.DonePercent, sent, total)
+
+			jm.status.RunDuration = time.Since(jm.status.StartTime).Truncate(time.Second).String()
 
 			jm.broadcast()
 
@@ -133,15 +158,17 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 
 	jm.Lock()
 	defer jm.Unlock()
-	fmt.Printf("jm.Runprint: Set status active \n")
+	fmt.Printf("jm.Runprint: Set status active = false \n")
 	jm.status.Active = false
 
 	if err != nil {
 		jm.status.Error = true
 		jm.status.Description = err.Error()
+		jm.status.DisplayStatus = "Error: " + err.Error()
 	} else {
 		jm.status.DonePercent = 100
 		jm.status.Description = "Done"
+		jm.status.DisplayStatus = "Printer Finished"
 	}
 	fmt.Printf("jm.Runprint: broadcast \n")
 
@@ -159,10 +186,13 @@ func (jm *JobManager) Active() bool {
 func (jm *JobManager) Cancel() {
 	jm.Lock()
 	defer jm.Unlock()
+	fmt.Printf("[jm.Cancel]  \n")
 	if jm.cancel != nil && jm.status.Active {
+		fmt.Printf("[jm.Cancel] Cancelling...   \n")
 		jm.cancel()
 		jm.status.Active = false
 		jm.status.Description = "Cancelled"
+		jm.status.DisplayStatus = "Cancelled"
 		jm.broadcast()
 		jm.cleanup()
 	}

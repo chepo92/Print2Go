@@ -13,6 +13,26 @@ type Line struct {
 	Params     map[rune]float64
 }
 
+// GcodeFilter filters out comments from gcode. repeated stripComments ?
+func GcodeFilter() func(string) bool {
+	return func(s string) bool {
+		if len(strings.Trim(s, " ")) == 0 {
+			return true
+		}
+		if strings.HasPrefix(s, ";") {
+			return true
+		}
+		return false
+	}
+}
+
+// NopFilter never filters.
+func NopFilter() func(string) bool {
+	return func(_ string) bool {
+		return false
+	}
+}
+
 func stripComments(s string) string {
 	if idx := strings.Index(s, ";"); idx >= 0 {
 		s = s[:idx]

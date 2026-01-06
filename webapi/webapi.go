@@ -8,19 +8,21 @@ import (
 	"github.com/chepo92/PrintAndGo/serial"
 	"github.com/chepo92/PrintAndGo/serial/serialmgr"
 	"github.com/chepo92/PrintAndGo/store"
-	"github.com/chepo92/PrintAndGo/task"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	hwserial "go.bug.st/serial"
+
+	"github.com/chepo92/PrintAndGo/job"
 )
 
 // WebApi is the macro structure of PrintAndGo, implements and manages the server and web API, handling storage, print tasks, serial port and camera.
 type WebApi struct {
 	storage FileStorage
 	// camera     *camera.Camera // camera disabled for windows build
-	task   *task.Task
-	serial *serialmgr.SerialManager
+	//task       *task.Task
+	serial     *serialmgr.SerialManager
+	jobManager *job.JobManager
 
 	selectedFile string
 	// SerialPortInfo struct {
@@ -45,14 +47,16 @@ type FileStorage interface {
 
 // New creates a new WebApi instance. Starts a new task and returns the instance.
 func New(store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (hwserial.Port, error), shutdown func()) *WebApi {
+	serialMgr := serialmgr.New(openSerial)
 
 	wapi := &WebApi{
-		storage:  store,
-		serial:   serialmgr.New(openSerial),
-		motdFile: motdFile,
-		shutdown: shutdown,
+		storage:    store,
+		serial:     serialMgr,
+		motdFile:   motdFile,
+		shutdown:   shutdown,
+		jobManager: job.New(serialMgr),
 		//camera:     camera.New(camdev), // camera disabled for windows build
-		task: task.New(),
+		//task: task.New(),
 	}
 	return wapi
 }
@@ -88,14 +92,14 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	// Octoprint-compatibility
 	r.Post("/api/login", octoLoginReply)
 	r.Get("/api/version", octoVersionReply)
-	r.Get("/api/server", octoServerReply)                   // To be implemented
-	r.Get("/api/connection", wapi.octoGetConnectionReply)   // To be implemented
-	r.Post("/api/connection", wapi.octoPostConnectionReply) // To be implemented
+	r.Get("/api/server", octoServerReply) // To be implemented
+	r.Get("/api/connection", wapi.octoGetConnectionReply)
+	r.Post("/api/connection", wapi.octoPostConnectionReply)
 	r.Post("/api/files/local", wapi.localUpload)
-	r.Get("/api/job", wapi.octoJobStatus)
+	r.Get("/api/job", wapi.octoGetJobStatus)
 	r.Post("/api/job", wapi.octoPostJob)
 	r.Get("/api/languages", octoLanguagesReply) // To be implemented
-	r.Get("/api/printer", octoPrinterReplyFake)
+	r.Get("/api/printer", wapi.octoPrinterReply)
 	r.Post("/api/printer/command", wapi.octoPrinterCommand)
 	r.Get("/api/printerprofiles", octoPrinterProfilesReply) // To be implemented
 	r.Get("/api/settings", octoSettingsReply)

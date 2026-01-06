@@ -3,6 +3,7 @@ package webapi
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
 
 const (
@@ -38,6 +39,7 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 		wapi.error(w, "Failed to parse form data")
 		return
 	}
+	defer f.Close()
 
 	if h.Size > maxUploadSize {
 		wapi.error(w, "File upload exceeds limit")
@@ -70,16 +72,30 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	if rq.FormValue("print") == "true" {
 		shutdown := (rq.FormValue("shutdown") == "" || rq.FormValue("shutdown") == "true")
 
-		wapi.log("Enqueueing: %s for printing after upload. Shutdown after print: %v", h.Filename, shutdown)
 		instr, err := wapi.storage.ReadFile(path, h.Filename)
 		if err != nil {
 			wapi.log("Failed to read file we just uploaded: %v", err)
 			return
 		}
-		fmt.Printf("calling enqueuePrint from localUpload\n")
-		if err := wapi.enqueuePrint(instr, shutdown); err != nil {
-			wapi.log("Enqueueing failed: %v", err)
+		wapi.log("Enqueueing: %s for printing after upload. Shutdown after print: %v", h.Filename, shutdown)
+
+		fmt.Printf("calling jobManager.StartPrint from localUpload\n")
+		// Start job using JobManager
+		if err := wapi.jobManager.StartPrint(instr); err != nil {
+			wapi.log("Failed to start print job: %v", err)
 			return
+		}
+
+		// Optional: launch goroutine to shutdown after job finishes
+		if shutdown {
+			go func() {
+				// Wait until job finishes
+				for wapi.jobManager.Snapshot().Active {
+					time.Sleep(time.Second)
+				}
+				wapi.log("Shutting down printer after job completion")
+				wapi.shutdown()
+			}()
 		}
 	}
 }

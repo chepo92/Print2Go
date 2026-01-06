@@ -282,7 +282,7 @@ func (sm *SerialManager) SendLine(line string) error {
 	if sm.state != Connected {
 		return fmt.Errorf("serial not connected")
 	}
-
+	fmt.Printf("[SendLine] Sending line:  %s\n", line)
 	_, err := sm.port.Write([]byte(line + "\n"))
 	if err != nil {
 		sm.state = Error
@@ -312,6 +312,15 @@ func (sm *SerialManager) SendGcode(line string, wait bool) error {
 
 	if wait {
 		return <-resp
+	}
+	return nil
+}
+
+func (sm *SerialManager) SendGcodeLines(lines []string) error {
+	for _, line := range lines {
+		if err := sm.SendGcode(line, true); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -367,7 +376,7 @@ func (sm *SerialManager) SendGcodeFileWithContext(
 
 	scanner := bufio.NewScanner(r)
 
-	// opcional: contar líneas antes
+	// Count Lines
 	lines := 0
 	buf, _ := io.ReadAll(r)
 	for _, b := range bytes.Split(buf, []byte("\n")) {

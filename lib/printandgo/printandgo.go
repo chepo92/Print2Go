@@ -8,8 +8,6 @@ import (
 	"log"
 	"os"
 	"sync"
-
-	"github.com/chepo92/PrintAndGo/chanreader"
 )
 
 type PrintAndGo struct {
@@ -56,7 +54,7 @@ type OutCmd struct {
 func New(s io.ReadWriteCloser, f io.Reader, opts ...func(*PrintAndGo)) *PrintAndGo {
 	tp := &PrintAndGo{
 		serialOut: s,
-		serialIn:  chanreader.New(s, chanreader.NopFilter()),
+		// serialIn:  chanreader.New(s, chanreader.NopFilter()),
 		// feedIn:    chanreader.New(f, chanreader.GcodeFilter()),
 	}
 

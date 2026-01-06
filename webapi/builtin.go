@@ -1,10 +1,8 @@
 package webapi
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
-
-	"github.com/chepo92/PrintAndGo/store/bufstore"
 )
 
 var gCodes = map[string][]string{
@@ -57,6 +55,7 @@ var gCodes = map[string][]string{
 }
 
 func (wapi *WebApi) pagEnqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
+
 	q := rq.FormValue("action")
 
 	pl, ok := gCodes[q]
@@ -65,9 +64,14 @@ func (wapi *WebApi) pagEnqueueBuiltin(w http.ResponseWriter, rq *http.Request) {
 		return
 	}
 
-	code := []byte(strings.Join(pl, "\n") + "\n")
-	instr := bufstore.New(code, q)
-	if err := wapi.enqueuePrint(instr, false); err != nil {
+	if !wapi.serial.IsConnected() {
+		wapi.error(w, "printer not connected")
+		return
+	}
+
+	fmt.Printf("[builtin] executing action: %s\n", q)
+
+	if err := wapi.serial.SendGcodeLines(pl); err != nil {
 		wapi.error(w, "error executing internal gcode")
 	}
 }
