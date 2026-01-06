@@ -2,11 +2,11 @@ package job
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/chepo92/PrintAndGo/lib/printandgo"
 	"github.com/chepo92/PrintAndGo/serial/serialmgr"
 	store "github.com/chepo92/PrintAndGo/storage"
 )
@@ -161,15 +161,24 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 	fmt.Printf("jm.Runprint: Set status active = false \n")
 	jm.status.Active = false
 
-	if err != nil {
-		jm.status.Error = true
-		jm.status.Description = err.Error()
-		jm.status.DisplayStatus = "Error: " + err.Error()
-	} else {
+	switch {
+	case err == nil:
 		jm.status.DonePercent = 100
 		jm.status.Description = "Done"
 		jm.status.DisplayStatus = "Printer Finished"
+		jm.status.Error = false
+
+	case errors.Is(err, context.Canceled):
+		jm.status.Description = "Cancelled"
+		jm.status.DisplayStatus = "Cancelled"
+		jm.status.Error = false
+
+	default:
+		jm.status.Error = true
+		jm.status.Description = err.Error()
+		jm.status.DisplayStatus = "Error: " + err.Error()
 	}
+
 	fmt.Printf("jm.Runprint: broadcast \n")
 
 	jm.broadcast()
@@ -242,24 +251,24 @@ func (jm *JobManager) broadcast() {
 	}
 }
 
-// callback usado por PrintAndGo para actualizar estado en tiempo real
-func (jm *JobManager) callback(cbd *printandgo.CallbackData) {
-	jm.Lock()
-	defer jm.Unlock()
+// // callback usado por PrintAndGo para actualizar estado en tiempo real
+// func (jm *JobManager) callback(cbd *printandgo.CallbackData) {
+// 	jm.Lock()
+// 	defer jm.Unlock()
 
-	if cbd != nil {
-		jm.status.LastCommand = cbd.LastSent
-		jm.status.LastReply = cbd.Reply
+// 	if cbd != nil {
+// 		jm.status.LastCommand = cbd.LastSent
+// 		jm.status.LastReply = cbd.Reply
 
-		// lines := jm.gcodeStream.LineCount()
-		// if lines > 0 {
-		// 	jm.status.DonePercent = float64(cbd.NumSent) / float64(lines) * 100
-		// }
-		// jm.status.Description = fmt.Sprintf("%s | %.1f%% (%d/%d)", jm.gcodeStream.Name(), jm.status.DonePercent, cbd.NumSent, lines)
-	}
+// 		// lines := jm.gcodeStream.LineCount()
+// 		// if lines > 0 {
+// 		// 	jm.status.DonePercent = float64(cbd.NumSent) / float64(lines) * 100
+// 		// }
+// 		// jm.status.Description = fmt.Sprintf("%s | %.1f%% (%d/%d)", jm.gcodeStream.Name(), jm.status.DonePercent, cbd.NumSent, lines)
+// 	}
 
-	jm.broadcast()
-}
+// 	jm.broadcast()
+// }
 
 // Snapshot devuelve el estado actual del trabajo
 func (jm *JobManager) Snapshot() JobStatus {
