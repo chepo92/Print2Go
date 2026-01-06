@@ -20,15 +20,12 @@ import (
 type WebApi struct {
 	storage FileStorage
 	// camera     *camera.Camera // camera disabled for windows build
-	//task       *task.Task
+
 	serial     *serialmgr.SerialManager
 	jobManager *job.JobManager
 
 	selectedFile string
-	// SerialPortInfo struct {
-	// 	Port     string
-	// 	BaudRate int
-	// }
+
 	// motd file path
 	motdFile string
 	// function we execute if hardware should be shut down.
@@ -60,13 +57,6 @@ func New(store FileStorage, motdFile string, openSerial func(serial.SerialConfig
 	}
 	return wapi
 }
-
-// SetPortBaudRate sets the current port and baud rate
-// This is used to update the UI.
-// func (wapi *WebApi) SetPortBaudRate(port string, baud int) {
-// 	wapi.serial.SetPort(port)
-// 	wapi.serial.SetBaudRate(baud)
-// }
 
 // SetVersion sets the current version of PrintAndGo
 func (wapi *WebApi) SetVersion(v string) {
@@ -132,20 +122,6 @@ func (wapi *WebApi) pagShutdown(w http.ResponseWriter, r *http.Request) {
 	wapi.shutdown()
 	jsonWrite(w, nil)
 }
-
-// func (wapi *WebApi) getSerial() (io.ReadWriteCloser, error) {
-// 	var err error
-// 	wapi.serialOnce.Do(func() {
-// 		wapi.serial, err = wapi.serialPort()
-// 	})
-// 	return wapi.serial, err
-// }
-
-// func (wapi *WebApi) Close() {
-// 	if wapi.serial != nil {
-// 		wapi.serial.Close()
-// 	}
-// }
 
 func octoStateFromSerial(s serialmgr.SerialState) string {
 	switch s {

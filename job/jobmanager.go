@@ -94,7 +94,6 @@ func (jm *JobManager) StartPrint(gcs store.Stream) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	jm.ctx = ctx
 	jm.cancel = cancel
-	// jm.gcodeStream = gcs
 
 	jm.status = JobStatus{
 		File:           gcs.Name(),
@@ -115,10 +114,7 @@ func (jm *JobManager) StartPrint(gcs store.Stream) error {
 		DisplayStatus:  "Printing...",
 	}
 
-	// jm.pagInstance = printandgo.New(nil, gcs) // puerto ya manejado dentro de PrintAndGo
-
 	// Configuramos callback para actualizar estado
-	// printandgo.Callback(jm.callback)(jm.pagInstance)
 	jm.broadcast()
 
 	fmt.Printf("calling jm.runPrint from StartPrint\n")
@@ -250,25 +246,6 @@ func (jm *JobManager) broadcast() {
 		}()
 	}
 }
-
-// // callback usado por PrintAndGo para actualizar estado en tiempo real
-// func (jm *JobManager) callback(cbd *printandgo.CallbackData) {
-// 	jm.Lock()
-// 	defer jm.Unlock()
-
-// 	if cbd != nil {
-// 		jm.status.LastCommand = cbd.LastSent
-// 		jm.status.LastReply = cbd.Reply
-
-// 		// lines := jm.gcodeStream.LineCount()
-// 		// if lines > 0 {
-// 		// 	jm.status.DonePercent = float64(cbd.NumSent) / float64(lines) * 100
-// 		// }
-// 		// jm.status.Description = fmt.Sprintf("%s | %.1f%% (%d/%d)", jm.gcodeStream.Name(), jm.status.DonePercent, cbd.NumSent, lines)
-// 	}
-
-// 	jm.broadcast()
-// }
 
 // Snapshot devuelve el estado actual del trabajo
 func (jm *JobManager) Snapshot() JobStatus {
