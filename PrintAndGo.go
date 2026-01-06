@@ -35,7 +35,7 @@ var (
 	flagCamera   *string
 )
 
-// Parametros dependientes del sistema operativo
+// Parámetros dependientes del sistema operativo
 func init() {
 	if runtime.GOOS == "windows" {
 		defaultTTY = "COM3"
@@ -102,7 +102,7 @@ func main() {
 	s := webapi.New(localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, shutdownFunc(*flagShutdown))
 	//s.SetPortBaudRate(*flagTTY, *flagBaud)
 	// Print some info
-	log.Printf("Listening on '%s' using serial port '%s' at baud %d", *flagListen, *flagTTY, *flagBaud)
+	log.Printf("Host and API Listening on '%s', using serial port: '%s' at baud: %d", *flagListen, *flagTTY, *flagBaud)
 	log.Printf("Storage path is '%s', shutdown script is '%s', motd file is '%s', camera is '%s'", *flagStorage, *flagShutdown, *flagMotd, *flagCamera)
 
 	// Start the server
