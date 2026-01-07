@@ -29,6 +29,7 @@ type JobStatus struct {
 	LastReply   string `json:"lastreply"`
 	Active      bool   `json:"active"`
 	Error       bool   `json:"error"`
+	Paused      bool   `json:"paused"`
 
 	// Job progress
 	DisplayStatus string    `json:"displayStatus"`
@@ -66,6 +67,12 @@ type JobManager struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
+	mu sync.Mutex
+
+	paused   bool
+	pauseCh  chan struct{}
+	resumeCh chan struct{}
+
 	status      JobStatus
 	subscribers map[string]chan JobStatus
 }
@@ -94,6 +101,9 @@ func (jm *JobManager) StartPrint(gcs store.Stream) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	jm.ctx = ctx
 	jm.cancel = cancel
+
+	jm.pauseCh = make(chan struct{})
+	jm.resumeCh = make(chan struct{})
 
 	jm.status = JobStatus{
 		File:           gcs.Name(),
@@ -142,6 +152,10 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 		ctx,
 		stream,
 		func(sent, total int, cmd string) {
+
+			for jm.IsPaused() {
+				time.Sleep(100 * time.Millisecond)
+			}
 			jm.Lock()
 			defer jm.Unlock()
 
@@ -271,4 +285,26 @@ func (jm *JobManager) cleanup() {
 	jm.ctx = nil
 	jm.cancel = nil
 	// jm.gcodeStream = nil
+}
+
+func (jm *JobManager) Pause() {
+	jm.mu.Lock()
+	jm.paused = true
+	jm.status.Paused = true
+	jm.status.DisplayStatus = "Paused"
+	jm.mu.Unlock()
+}
+
+func (jm *JobManager) Resume() {
+	jm.mu.Lock()
+	jm.paused = false
+	jm.status.Paused = false
+	jm.status.DisplayStatus = "Printing"
+	jm.mu.Unlock()
+}
+
+func (jm *JobManager) IsPaused() bool {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+	return jm.paused
 }

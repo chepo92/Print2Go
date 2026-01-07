@@ -37,7 +37,11 @@ func buildOctoJobReply(v job.JobStatus) any {
 	completion := 0.0
 
 	if v.Active {
-		state = "Printing"
+		if v.Paused {
+			state = "Paused"
+		} else {
+			state = "Printing"
+		}
 		printTime = int(time.Since(v.StartTime).Seconds())
 		completion = v.DonePercent / 100.0
 
@@ -133,6 +137,7 @@ func (wapi *WebApi) octoPostJob(w http.ResponseWriter, r *http.Request) {
 
 	var rq struct {
 		Command string `json:"command"`
+		Action  string `json:"action,omitempty"`
 	}
 	if err := json.Unmarshal(buf, &rq); err != nil {
 		wapi.error(w, "json unmarshal error")
@@ -166,7 +171,38 @@ func (wapi *WebApi) octoPostJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	case "pause":
-		fmt.Printf("Ocotapi pause \n")
+		fmt.Printf("[OctoAPI] pause request (action=%q)\n", rq.Action)
+		if wapi.jobManager == nil {
+			jsonWrite(w, map[string]string{"error": "job manager not initialized"})
+			return
+		}
+		paused := wapi.jobManager.IsPaused()
+		switch rq.Action {
+		case "", "toggle":
+			// action omited default: toggle
+			if paused {
+				wapi.jobManager.Resume()
+			} else {
+				wapi.jobManager.Pause()
+			}
+
+		case "pause":
+			if !paused {
+				fmt.Println("[OctoAPI] action pause")
+				wapi.jobManager.Pause()
+			}
+
+		case "resume":
+			if paused {
+				fmt.Println("[OctoAPI] action resume")
+				wapi.jobManager.Resume()
+			}
+
+		default:
+			wapi.error(w, "invalid pause action")
+			return
+		}
+
 		w.WriteHeader(http.StatusNoContent)
 		return
 	default:
@@ -255,6 +291,10 @@ func (wapi *WebApi) octoPrinterReply(w http.ResponseWriter, r *http.Request) {
 		flags.Error = true
 		flags.ClosedOrError = true
 
+	case job.Active && job.Paused:
+		text = "Paused"
+		flags.Paused = true
+
 	case job.Active:
 		text = "Printing"
 		flags.Printing = true
@@ -268,7 +308,7 @@ func (wapi *WebApi) octoPrinterReply(w http.ResponseWriter, r *http.Request) {
 	flags.SdReady = connected
 
 	reply := octoPrinterReply{
-		Temperature: map[string]any{}, // vacío pero presente
+		Temperature: map[string]any{}, // Empty for now TBI
 	}
 
 	reply.SD.Ready = flags.SdReady
