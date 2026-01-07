@@ -129,6 +129,8 @@ func (wapi *WebApi) octoPostJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("[octoPostJob] Body: %s\n", string(buf))
+
 	var rq struct {
 		Command string `json:"command"`
 	}
@@ -140,24 +142,35 @@ func (wapi *WebApi) octoPostJob(w http.ResponseWriter, r *http.Request) {
 	switch rq.Command {
 
 	case "start":
+		// Pending to be implemented: select file
 		// Debe existir un archivo seleccionado / listo para imprimir
 		// enqueuePrint ya maneja stream + task
 		// if err := wapi.enqueueLastUploaded(false); err != nil {
 		// 	wapi.error(w, err.Error())
 		// 	return
 		// }
-
 		w.WriteHeader(http.StatusNoContent)
 		return
 
 	case "cancel":
-		fmt.Printf("Ocotapi cancel \n")
-		//wapi.task.Cancel()
+		fmt.Printf("OcotoAPI cancel \n")
+		if wapi.jobManager == nil {
+			jsonWrite(w, map[string]string{"error": "job manager not initialized"})
+			return
+		}
+		wapi.jobManager.Cancel()
 		w.WriteHeader(http.StatusNoContent)
 		return
-
+	case "restart":
+		fmt.Printf("Ocotapi restart: Not Implemented \n")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	case "pause":
+		fmt.Printf("Ocotapi pause \n")
+		w.WriteHeader(http.StatusNoContent)
+		return
 	default:
-		wapi.error(w, "invalid command")
+		wapi.error(w, "[POST: api/job] Invalid command")
 		return
 	}
 }
