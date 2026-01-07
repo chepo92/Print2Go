@@ -329,7 +329,7 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		if err := wapi.serial.SendLine(c); err != nil {
+		if err := wapi.jobManager.SendPriorityCommand(c); err != nil {
 			wapi.error(w, err.Error())
 			return
 		}

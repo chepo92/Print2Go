@@ -55,7 +55,9 @@ type SerialManager struct {
 	sendQ     chan GcodeCmd
 	priorityQ chan GcodeCmd
 	inbound   chan string
-	stopCh    chan struct{}
+	onLine    func(string)
+
+	stopCh chan struct{}
 }
 
 type GcodeCmd struct {
@@ -75,13 +77,10 @@ func New(openFn func(serial.SerialConfig) (hwserial.Port, error)) *SerialManager
 	}
 }
 
-var pendingAck chan error
-
-func (sm *SerialManager) onAck() {
-	if pendingAck != nil {
-		pendingAck <- nil
-		pendingAck = nil
-	}
+func (sm *SerialManager) SetLineHandler(fn func(string)) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.onLine = fn
 }
 
 func (sm *SerialManager) writeLoop() {
@@ -130,6 +129,7 @@ func (sm *SerialManager) writeLoop() {
 				fmt.Printf("[SERIAL] .. %s\n", line)
 
 			case <-sm.stopCh:
+				fmt.Printf("[SERIAL] writeLoop stopped\n")
 				return
 			}
 		}
@@ -170,6 +170,14 @@ func (sm *SerialManager) readLoop() {
 			default:
 				fmt.Printf("[SERIAL] inbound buffer full, dropping line\n")
 			}
+
+			sm.mu.Lock()
+			handler := sm.onLine
+			sm.mu.Unlock()
+
+			if handler != nil {
+				handler(line)
+			}
 		}
 	}
 }
@@ -205,7 +213,7 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	sm.port = port
 	sm.state = Connected
 
-	// inicialización de canales (ETAPA D)
+	// init channels
 	sm.sendQ = make(chan GcodeCmd, 32)
 	sm.priorityQ = make(chan GcodeCmd, 8)
 	sm.inbound = make(chan string, 128)
@@ -214,6 +222,7 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	fmt.Printf("[SERIAL] Open OK, state -> CONNECTED\n")
 	sm.mu.Unlock()
 
+	// Init write and read Loops
 	go sm.writeLoop()
 	go sm.readLoop()
 
@@ -236,6 +245,7 @@ func (sm *SerialManager) Disconnect() error {
 	}
 
 	if sm.port != nil {
+		sm.stopCh <- struct{}{}
 		err := sm.port.Close()
 		sm.port = nil
 		if err != nil {
@@ -338,9 +348,21 @@ func (sm *SerialManager) SendGcodePriority(line string, wait bool) error {
 		resp = make(chan error, 1)
 	}
 
-	sm.priorityQ <- GcodeCmd{
+	cmd := GcodeCmd{
 		Line:   strings.TrimSpace(line),
 		RespCh: resp,
+	}
+
+	select {
+	case sm.priorityQ <- cmd:
+		// ok
+	default:
+		// queue full → non blocling
+		if wait {
+			return fmt.Errorf("priority queue full")
+		}
+		fmt.Printf("[SERIAL] priority queue full, dropping command: %s", cmd.Line)
+		return nil
 	}
 
 	if wait {
@@ -371,7 +393,7 @@ func (sm *SerialManager) SendGcodeFile(r io.Reader) error {
 func (sm *SerialManager) SendGcodeFileWithContext(
 	ctx context.Context,
 	r io.Reader,
-	onLine func(sent int, total int, cmd string, reply string),
+	onLine func(sent int, total int, cmd string),
 ) error {
 
 	scanner := bufio.NewScanner(r)
@@ -412,7 +434,7 @@ func (sm *SerialManager) SendGcodeFileWithContext(
 		sent++
 
 		if onLine != nil {
-			onLine(sent, lines, parsed.Raw, "")
+			onLine(sent, lines, parsed.Raw)
 		}
 	}
 

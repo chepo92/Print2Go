@@ -129,16 +129,23 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 
 	// totalLines := stream.LineCount()
 	//sent := 0
+	jm.serial.SetLineHandler(func(line string) {
+		jm.Lock()
+		defer jm.Unlock()
+
+		jm.status.LastReply = line
+		jm.broadcast()
+	})
+
 	fmt.Printf("calling serial.SendGcodeFileWithContext from jm.runPrint \n")
 	err := jm.serial.SendGcodeFileWithContext(
 		ctx,
 		stream,
-		func(sent, total int, cmd, reply string) {
+		func(sent, total int, cmd string) {
 			jm.Lock()
 			defer jm.Unlock()
 
 			jm.status.LastCommand = cmd
-			jm.status.LastReply = reply
 
 			if total > 0 {
 				jm.status.DonePercent = float64(sent) / float64(total) * 100
@@ -175,8 +182,9 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 		jm.status.DisplayStatus = "Error: " + err.Error()
 	}
 
-	fmt.Printf("jm.Runprint: broadcast \n")
+	jm.serial.SetLineHandler(nil)
 
+	fmt.Printf("jm.Runprint: broadcast \n")
 	jm.broadcast()
 }
 
@@ -203,16 +211,19 @@ func (jm *JobManager) Cancel() {
 	}
 }
 
-// InjectGcode envía un comando gcode al trabajo activo
-func (jm *JobManager) InjectGcode(cmd string) error {
-	jm.RLock()
-	defer jm.RUnlock()
-	fmt.Println("TBI: InjectGcode called in JobManager. ")
-	// if !jm.Active() || jm.pagInstance == nil {
-	// 	return fmt.Errorf("no hay trabajo activo")
-	// }
-	// jm.pagInstance.InjectGcode(cmd)
-	return nil
+func (jm *JobManager) SendPriorityCommand(cmd string) error {
+	jm.Lock()
+	defer jm.Unlock()
+
+	if !jm.serial.IsConnected() {
+		return fmt.Errorf("serial not connected")
+	}
+
+	// Actualizar estado para la UI
+	jm.status.LastCommand = cmd
+	jm.broadcast()
+
+	return jm.serial.SendGcodePriority(cmd, false)
 }
 
 // Subscribe devuelve un canal para recibir actualizaciones de estado
