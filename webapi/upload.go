@@ -22,7 +22,7 @@ type uploadReplyFiles struct {
 
 // localUpload handles file uploads to the local storage.
 // If the "print" form value is set to "true", it will enqueue the file for printing after upload.
-// If the "shutdown" form value is set to "true" (or is absent), it will shutdown the hardware after printing.
+// If the "shutdown" form value is set to "true", it will shutdown the hardware after printing, will do nothing if shutdown is nor set.
 func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 
 	// Dump the request to a byte slice
@@ -33,6 +33,27 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	// }
 
 	// fmt.Printf("--- Incoming Request ---\n%s\n", string(requestDump))
+	// Necesario para acceder a multipart sin consumir body arbitrariamente
+	err := rq.ParseMultipartForm(32 << 20) // 32MB max in memory
+	if err != nil {
+		wapi.error(w, fmt.Sprintf("Error parsing multipart: %v", err))
+		return
+	}
+
+	fmt.Println("---- Multipart Form Fields ----")
+	for key, vals := range rq.MultipartForm.Value {
+		fmt.Printf("%s = %v\n", key, vals)
+	}
+
+	// show file info
+	fileHeaders := rq.MultipartForm.File["file"]
+	if len(fileHeaders) > 0 {
+		fh := fileHeaders[0]
+		fmt.Printf("file = { filename=%q, size=%d, header=%v }\n",
+			fh.Filename, fh.Size, fh.Header)
+	} else {
+		fmt.Println("file = <none>")
+	}
 
 	f, h, err := rq.FormFile("file")
 	if err != nil {
@@ -70,7 +91,7 @@ func (wapi *WebApi) localUpload(w http.ResponseWriter, rq *http.Request) {
 	jsonWrite(w, reply)
 
 	if rq.FormValue("print") == "true" {
-		shutdown := (rq.FormValue("shutdown") == "" || rq.FormValue("shutdown") == "true")
+		shutdown := rq.FormValue("shutdown") == "true"
 
 		instr, err := wapi.storage.ReadFile(path, h.Filename)
 		if err != nil {
