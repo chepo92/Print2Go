@@ -8,8 +8,6 @@ import (
 var gCodes = map[string][]string{
 	"z-axis": {
 		"M117 z-axis lift",
-		"M104 S0 ; turn off heat",
-		"M140 S0 ; turn off bed",
 		"G91     ; relative movement",
 		"G1 Z20  ; go up 2cm",
 		"G90     ; absolute movement",
@@ -17,7 +15,7 @@ var gCodes = map[string][]string{
 	"heat": {
 		"M117 heating to 210 degree",
 		"M104 S210 ; set hotend 210",
-		"M109 S210 ; wait for 210",
+		"M140 S60  ; set bed temp to 60",
 	},
 	"cooldown": {
 		"M104 S0 ; Turn off hotend heater",
