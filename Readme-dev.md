@@ -45,9 +45,10 @@ $ cd Print2Go
 4. In the interactive terminal (IT), build the Print2Go project (use a the cross compile command from above if the case): 
 `go build -o ./builds/Print2Go .`
 
-5. Once build, copy files back to host (eg. after cross compile, get the binaries)
+5. Once build, copy files back to host (eg. after cross compile, get the binaries), run i nthe host: 
+Copy one file
 `docker cp go-builder:/app/builds/Print2GoLinux ./builds/Print2GoLinux`
-
+Copy all folder
 `docker cp go-builder:/app/builds/ .`
 
 6. If you need to update the source, copy files from host to container (eg. developed new code and need to compile in docker), better to delete previous files if made a lot of changes
@@ -61,8 +62,9 @@ Then you can build (step 4) and copy back to host (step 5)
 
 Go can be cross compiled
 Example for MIPS Little Endian
-`GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build .`
+`GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/Print2Go_mipsle .`
 
+## Build with docker
 1.Build docker image with updated files, no cache if anything changed (for dev), dockerfile and docker image can be modified with cross compile commands
 `docker build --no-cache -t go-dev-linux-img:1.0 -f ./Dockerfile_builder .`
 
@@ -71,6 +73,7 @@ Examples
 
 Examples
 `docker run -d -it --name go-builder go-dev-linux-img:1.0`
+
 
 ### Virtual printer
 
