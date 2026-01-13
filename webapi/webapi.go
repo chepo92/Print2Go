@@ -1,9 +1,13 @@
 package webapi
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/chepo92/PrintAndGo/serial"
 	"github.com/chepo92/PrintAndGo/serial/serialmgr"
@@ -31,6 +35,8 @@ type WebApi struct {
 	// function we execute if hardware should be shut down.
 	shutdown func()
 	Version  string
+
+	listenAddr string
 }
 
 type GcodeCommandRequest struct {
@@ -43,10 +49,11 @@ type FileStorage interface {
 }
 
 // New creates a new WebApi instance. Starts a new task and returns the instance.
-func New(store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (hwserial.Port, error), shutdown func()) *WebApi {
+func New(listenAddr string, store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (hwserial.Port, error), shutdown func()) *WebApi {
 	serialMgr := serialmgr.New(openSerial)
 
 	wapi := &WebApi{
+		listenAddr: listenAddr,
 		storage:    store,
 		serial:     serialMgr,
 		motdFile:   motdFile,
@@ -55,7 +62,46 @@ func New(store FileStorage, motdFile string, openSerial func(serial.SerialConfig
 		//camera:     camera.New(camdev), // camera disabled for windows build
 		//task: task.New(),
 	}
+
+	wapi.initAutoConnect()
+
+	wapi.serial.OnConnected = func() {
+		go wapi.sendInstanceM117()
+	}
+
 	return wapi
+}
+
+func (wapi *WebApi) sendInstanceM117() {
+	host, port, err := net.SplitHostPort(wapi.listenAddr)
+	if err != nil {
+		fmt.Printf("[WebAPI] Invalid listenAddr: %v\n", err)
+		return
+	}
+
+	ip := resolveDisplayIP(host)
+	cmd := fmt.Sprintf("M117 %s:%s", ip, port)
+
+	fmt.Printf("[WebAPI] Displaying instance on printer: %s\n", cmd)
+	if err := wapi.serial.SendGcode(cmd, true); err != nil {
+		fmt.Printf("[WebAPI] Failed to send M117: %v\n", err)
+	}
+}
+
+func resolveDisplayIP(host string) string {
+	if host != "" && host != "0.0.0.0" && host != "::" {
+		return host
+	}
+
+	addrs, _ := net.InterfaceAddrs()
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if v4 := ipnet.IP.To4(); v4 != nil {
+				return v4.String()
+			}
+		}
+	}
+	return "localhost"
 }
 
 // SetVersion sets the current version of PrintAndGo
@@ -136,4 +182,18 @@ func octoStateFromSerial(s serialmgr.SerialState) string {
 	default:
 		return "Unknown"
 	}
+}
+
+func (wapi *WebApi) initAutoConnect() {
+	go func() {
+		time.Sleep(2 * time.Second) // dar tiempo a detectar puertos
+		req := map[string]any{
+			"command":     "connect",
+			"port":        "AUTO",
+			"baudrate":    115200,
+			"autoconnect": true,
+		}
+		buf, _ := json.Marshal(req)
+		http.Post("http://localhost/api/connection", "application/json", bytes.NewReader(buf))
+	}()
 }

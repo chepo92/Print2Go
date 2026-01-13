@@ -69,9 +69,7 @@ type JobManager struct {
 
 	mu sync.Mutex
 
-	paused   bool
-	pauseCh  chan struct{}
-	resumeCh chan struct{}
+	paused bool
 
 	status      JobStatus
 	subscribers map[string]chan JobStatus
@@ -101,9 +99,6 @@ func (jm *JobManager) StartPrint(gcs store.Stream) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	jm.ctx = ctx
 	jm.cancel = cancel
-
-	jm.pauseCh = make(chan struct{})
-	jm.resumeCh = make(chan struct{})
 
 	jm.status = JobStatus{
 		File:           gcs.Name(),
@@ -170,6 +165,16 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 
 			jm.broadcast()
 
+		},
+
+		jm.HandleGcode,
+
+		func(line string) error {
+			// Bloqueo aquí, NO en el serial
+			for jm.IsPaused() {
+				time.Sleep(150 * time.Millisecond)
+			}
+			return jm.serial.SendLine(line)
 		},
 	)
 
@@ -307,4 +312,15 @@ func (jm *JobManager) IsPaused() bool {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
 	return jm.paused
+}
+
+func (jm *JobManager) HandleGcode(cmd string) {
+	switch cmd {
+	case "M0", "M1", "M600", "M25":
+		fmt.Println("[JobManager] Pause requested via G-code:", cmd)
+		jm.Pause()
+	case "M24": // Resume SD print
+		fmt.Println("[JobManager] Resume requested via G-code:", cmd)
+		jm.Resume()
+	}
 }

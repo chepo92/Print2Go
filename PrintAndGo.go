@@ -99,7 +99,7 @@ func main() {
 
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
-	s := webapi.New(localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, shutdownFunc(*flagShutdown))
+	s := webapi.New(*flagListen, localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, shutdownFunc(*flagShutdown))
 	//s.SetPortBaudRate(*flagTTY, *flagBaud)
 	// Print some info
 	log.Printf("Host and API Listening on '%s', using serial port: '%s' at baud: %d", *flagListen, *flagTTY, *flagBaud)

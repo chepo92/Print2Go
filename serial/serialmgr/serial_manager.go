@@ -52,6 +52,8 @@ type SerialManager struct {
 
 	openFn func(serial.SerialConfig) (hwserial.Port, error)
 
+	OnConnected func()
+
 	sendQ     chan GcodeCmd
 	priorityQ chan GcodeCmd
 	inbound   chan string
@@ -226,6 +228,10 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	go sm.writeLoop()
 	go sm.readLoop()
 
+	if sm.OnConnected != nil {
+		sm.OnConnected()
+	}
+
 	return nil
 
 }
@@ -394,6 +400,8 @@ func (sm *SerialManager) SendGcodeFileWithContext(
 	ctx context.Context,
 	r io.Reader,
 	onLine func(sent int, total int, cmd string),
+	onGcode func(cmd string),
+	send func(line string) error,
 ) error {
 
 	scanner := bufio.NewScanner(r)
@@ -427,7 +435,17 @@ func (sm *SerialManager) SendGcodeFileWithContext(
 			continue
 		}
 
+		// Notify gcode to JobManager
+		if onGcode != nil {
+			onGcode(parsed.Raw)
+		}
+
 		if err := sm.SendGcode(parsed.Raw, true); err != nil {
+			return err
+		}
+
+		// call injected send
+		if err := send(parsed.Raw); err != nil {
 			return err
 		}
 

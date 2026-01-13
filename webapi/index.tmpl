@@ -40,7 +40,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Cancel print operation</h5>
+            <h5 class="modal-title" id="cancelJob">Cancel print operation</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -62,7 +62,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Shutdown printer</h5>
+            <h5 class="modal-title" id="shutdown">Shutdown printer</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -139,6 +139,8 @@
         <br>
         <hr>
         <br>
+
+        <button class="btn btn-warning" @click="togglePause">{{ pauseText }}</button>
         <button type="button" class="btn btn-danger" data-toggle="modal" 
           data-target="#cancelDialog">Cancel print</button>
       </template>
@@ -217,7 +219,17 @@
             class="btn btn-primary">Reset printer</button></li>
         <li class="list-group-item"><button data-toggle="modal" data-target="#confirmShutdownDialog" type="button"
             class="btn btn-danger">Run shutdown script</button></li>
+        <li class="list-group-item">
+            <input v-model="gcodeInput" id="gcodeCmd" placeholder="Send Gcode..." />
+            <button @click="sendGcode" type="button"
+            class="btn btn-primary">Send</button>
+            <div id="gcodeStatus">     </div>     
+          
+          </li>            
       </ul>
+
+      <div> 
+      </div>
 
     </template>
 
@@ -249,6 +261,8 @@
         jobStatus: {},
         viewJobStatus: false,
         selectedFile: "",
+        gcodeInput: "",
+        pauseText: "Pause",
         statusFp: -1,
         wapiInfo: {
           Version: ""
@@ -285,8 +299,9 @@
             contentType: 'application/json',
             data: JSON.stringify({
               command: "connect",
-              port: vx.serial.selectedPort,
-              baudrate: vx.serial.baudrate
+              port: vx.serial.selectedPort || "AUTO",
+              baudrate: vx.serial.baudrate, 
+              autoconnect: true
             }),
             success: function () {
               vx.loadConnection();
@@ -311,7 +326,7 @@
           });
         },              
         loadData: function () {
-          vx = this;
+          let vx = this;
           jQuery.ajax({
             url: 'printandgo/job/status',
             data: { id: vx.statusFp },
@@ -324,7 +339,16 @@
               vx.statusFp = d.fp;
               if (d.active == true) {
                 vx.viewJobStatus = true;
-              }
+                if (d.paused) {
+                  vx.pauseText = "Resume";
+                } else {
+                  vx.pauseText = "Pause";
+                }
+
+              } else {
+                vx.viewJobStatus = false;
+                vx.pauseText = "Pause";
+              }              
               setTimeout(vx.loadData, 1000);
             },
           });
@@ -363,6 +387,7 @@
         },
         onGcodeStartUpload: function () {
           var data = new FormData();
+          let vx = this;
           data.append("print", true);
           data.append("shutdown", $("#runShutdownScript").is(":checked"));
           data.append("file", this.selectedFile);
@@ -375,7 +400,7 @@
             processData: false,
             method: 'POST',
             success: function (data) {
-              this.selectedFile = "";
+              vx.selectedFile = "";
               $('#uploadDialog').modal('hide');
             },
             error: function (data) {
@@ -383,6 +408,32 @@
             },
           });
           return true;
+        },
+        sendGcode: function () {
+            const cmd = this.gcodeInput.trim();
+            if (!cmd) return;
+            fetch("/api/printer/command", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ command: cmd })
+            })
+            .then(r => {
+                const status = document.getElementById('gcodeStatus');
+                if (r.status === 204) {
+                    status.innerText = "OK";
+                    status.style.color = "green";
+                } else {
+                    status.innerText = "Error " + r.status;
+                    status.style.color = "red";
+                }
+            })
+        },
+        togglePause: function () {
+          fetch('/api/job', {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command: "pause" })
+          }).catch(err => console.error("pause error", err));
         },
       },
       mounted: function () {
