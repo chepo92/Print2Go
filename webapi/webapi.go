@@ -63,11 +63,11 @@ func New(listenAddr string, store FileStorage, motdFile string, openSerial func(
 		//task: task.New(),
 	}
 
-	wapi.initAutoConnect()
+	// wapi.initAutoConnect()
 
-	wapi.serial.OnConnected = func() {
-		go wapi.sendInstanceM117()
-	}
+	// wapi.serial.OnConnected = func() {
+	// 	go wapi.sendInstanceM117()
+	// }
 
 	return wapi
 }
