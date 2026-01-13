@@ -192,6 +192,17 @@
                 @click="onSerialDisconnect">
           Disconnect
         </button>
+        <br> 
+        
+        <div class="form-check mt-2">
+          <input class="form-check-input"
+                type="checkbox"
+                id="autoConnect"
+                v-model="serial.autoConnect">
+          <label class="form-check-label" for="autoConnect">
+            Auto-connect on startup
+          </label>
+        </div>        
 
       </div>      
     </div>      
@@ -271,7 +282,8 @@
           state: "Closed",
           ports: [],
           selectedPort: "",
-          baudrate: 115200
+          baudrate: 115200, 
+          autoConnect: true
         }       
       },
       methods: {
@@ -288,6 +300,16 @@
 
               vx.serial.Port = d.current.port;
               vx.serial.BaudRate = d.current.baudrate;
+
+              // --- autoconnect ---
+              if (
+                vx.serial.autoConnect &&
+                vx.serial.state !== "Operational" &&
+                vx.serial.ports.length > 0
+              ) {
+                console.log("[auto-connect] Attempting connection on", vx.serial.selectedPort);
+                vx.onSerialConnect();
+              }              
             }
           });
         },
