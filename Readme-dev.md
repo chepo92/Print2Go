@@ -56,7 +56,7 @@ In the container (IT), remove existing app files:
 `cd /app/ && rm -r *`
 Then in the **host**, copy to container: 
 `docker cp ./ go-builder:/app/`
-Then you can build (step 4) and copy back to host (step 5)
+Then, back in the container, you can build (step 4) and copy back to host (step 5)
 
 ### Cross compile
 
