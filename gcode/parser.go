@@ -9,10 +9,10 @@ import (
 )
 
 type Line struct {
-	Raw        string
-	Command    string
-	HasCommand bool
-	Params     map[rune]float64
+	Raw        string           // The raw gcode line as read from the file
+	Command    string           // The G-code command (e.g., "G1", "M104")
+	HasCommand bool             // If the line has a valid cmd
+	Params     map[rune]float64 // Extra params associated with the command: eg X10 Y20
 }
 
 // GcodeFilter filters out comments from gcode. repeated stripComments ?
