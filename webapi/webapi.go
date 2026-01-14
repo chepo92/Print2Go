@@ -50,6 +50,7 @@ type FileStorage interface {
 
 // New creates a new WebApi instance. Starts a new task and returns the instance.
 func New(listenAddr string, store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (hwserial.Port, error), shutdown func()) *WebApi {
+
 	serialMgr := serialmgr.New(openSerial)
 
 	wapi := &WebApi{
@@ -65,9 +66,9 @@ func New(listenAddr string, store FileStorage, motdFile string, openSerial func(
 
 	// wapi.initAutoConnect()
 
-	// wapi.serial.OnConnected = func() {
-	// 	go wapi.sendInstanceM117()
-	// }
+	wapi.serial.OnConnected = func() {
+		go wapi.sendInstanceM117()
+	}
 
 	return wapi
 }
@@ -80,10 +81,11 @@ func (wapi *WebApi) sendInstanceM117() {
 	}
 
 	ip := resolveDisplayIP(host)
+	time.Sleep(5 * time.Second)
 	cmd := fmt.Sprintf("M117 %s:%s", ip, port)
 
 	fmt.Printf("[WebAPI] Displaying instance on printer: %s\n", cmd)
-	if err := wapi.serial.SendGcode(cmd, true); err != nil {
+	if err := wapi.serial.SendGcodePriority(cmd, true); err != nil {
 		fmt.Printf("[WebAPI] Failed to send M117: %v\n", err)
 	}
 }
