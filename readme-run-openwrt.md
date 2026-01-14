@@ -16,12 +16,12 @@ Wifi
 
 (thanks octoWRT/klipperWRT)
 
-- Copy/send Print2Go and configure: 
+- Copy/send Print2Go and Print2Go-serv and configure: 
 
-Send to,  Put the Print2Go-srv binary in usr/bin
+Send to,  Put the Print2Go binary in usr/bin, 
 scp -O Print2Go root@192.168.8.155:/usr/bin
 
-Put the Print2Go-srv /etc/init.d
+Copy the Print2Go-srv /etc/init.d  autostart script in etc/init.d folder
 scp -O Print2Go-srv root@192.168.8.155:/etc/init.d
 
 (Optional copy back)
@@ -46,21 +46,22 @@ Run as daemon (stops if terminal is closed):
 New (no necesita puerto usb)
 nohup ./PrintAndGo -listen 192.168.8.201:5001 >/dev/null 2>&1 &
 
-Create or copy the autostart script (Print2Go-srv) in init.d folder
+New (autodetect ip)
+nohup ./PrintAndGo -ip auto >/dev/null 2>&1 &
 
-remove non-standard line endings.
+remove non-standard line endings from Print2Go-srv, if any was added.
 in openwrt: 
 sed -i 's/\r//' /etc/init.d/Print2Go-srv
 
-Edit srv, put the right ip
+Edit Print2Go-srv, put the right ip
 vim /etc/init.d/Print2Go-srv
 
-escape and Save with: :wq 
+Escape and Save with: :wq 
  
 Enable
 /etc/init.d/Print2Go-srv enable
 
-Check
+Check enabled
 /etc/init.d/Print2Go-srv enabled && echo "on"
 
 Start manually the service to check everything is correct
