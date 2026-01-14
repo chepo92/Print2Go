@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -29,6 +30,8 @@ var (
 	flagBaud     *int
 	flagGcode    *string
 	flagListen   *string
+	flagIP       *string
+	flagPort     *int
 	flagStorage  *string
 	flagShutdown *string
 	flagMotd     *string
@@ -56,9 +59,11 @@ func init() {
 // Parametros por defecto de la CLI
 func setDefaultFlags() {
 	flagTTY = flag.String("tty", defaultTTY, "Port/tty to use")
-	flagBaud = flag.Int("baud", 115200, "baud rate of -port")
+	flagBaud = flag.Int("baud", 115200, "baud rate of -tty port")
 	flagGcode = flag.String("gcode", "", "file containing gcode")
 	flagListen = flag.String("listen", "127.0.0.1:5001", "ip:port to bind to")
+	flagIP = flag.String("ip", "", "auto | local | <ipv4>. If empty, defaults to local (127.0.0.1)")
+	flagPort = flag.Int("port", 5001, "Port to listen on (ignored if -listen is used)")
 	flagStorage = flag.String("storage", defaultStorage, "path to store gcode in")
 	flagShutdown = flag.String("shutdown-script", defaultShutdown, "script to execute to shutdown the printer")
 	flagMotd = flag.String("motd-file", defaultMotd, "Message of the day to display on the UI")
@@ -73,12 +78,31 @@ func main() {
 	flag.Parse()
 
 	if *flagTTY == "" {
-		xdie("-tty Port must be specified")
+		xdie("-tty Port cannot be blank \n")
 	}
 	if *flagGcode != "" {
 		//oneshotPrint(*flagTTY, *flagBaud, *flagGcode)
 
 		return
+	}
+
+	listenAddr := *flagListen
+
+	// Caso 1: Si el usuario especificó -listen, dejamos eso tal cual
+	if listenAddr == "127.0.0.1:5001" && *flagIP != "" {
+		// Caso 2: El usuario usa -ip / -port
+		var ip string
+		switch *flagIP {
+		case "":
+			ip = "127.0.0.1" // por defecto
+		case "local":
+			ip = "127.0.0.1"
+		case "auto":
+			ip = getAutoIP()
+		default:
+			ip = *flagIP
+		}
+		listenAddr = fmt.Sprintf("%s:%d", ip, *flagPort)
 	}
 
 	// if os.Args[len(os.Args)-1] == ":serial-pipe" {
@@ -92,17 +116,17 @@ func main() {
 
 	// Declare the server
 	srv := &http.Server{
-		Addr: *flagListen,
+		Addr: listenAddr,
 	}
 	// Setup serial port reader
 	//serialPortReader := serial.NewSerialPortFunc()
 
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
-	s := webapi.New(*flagListen, localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, shutdownFunc(*flagShutdown))
+	s := webapi.New(listenAddr, localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, shutdownFunc(*flagShutdown))
 	//s.SetPortBaudRate(*flagTTY, *flagBaud)
 	// Print some info
-	log.Printf("Host and API Listening on '%s', using serial port: '%s' at baud: %d", *flagListen, *flagTTY, *flagBaud)
+	log.Printf("Host and API Listening on '%s', using serial port: '%s' at baud: %d", listenAddr, *flagTTY, *flagBaud)
 	log.Printf("Storage path is '%s', shutdown script is '%s', motd file is '%s', camera is '%s'", *flagStorage, *flagShutdown, *flagMotd, *flagCamera)
 
 	// Start the server
@@ -165,4 +189,14 @@ func xdie(f string, args ...interface{}) {
 	fmt.Printf(f, args...)
 	flag.PrintDefaults()
 	os.Exit(1)
+}
+
+func getAutoIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "127.0.0.1"
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
 }
