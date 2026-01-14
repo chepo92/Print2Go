@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/chepo92/PrintAndGo/gcode"
 	"github.com/chepo92/PrintAndGo/serial/serialmgr"
 	store "github.com/chepo92/PrintAndGo/storage"
 )
@@ -146,15 +147,14 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 	err := jm.serial.SendGcodeFileWithContext(
 		ctx,
 		stream,
-		func(sent, total int, cmd string) {
+		func(sent, total int, parsed gcode.Line) {
 
-			for jm.IsPaused() {
-				time.Sleep(100 * time.Millisecond)
-			}
 			jm.Lock()
 			defer jm.Unlock()
 
-			jm.status.LastCommand = cmd
+			// fmt.Printf("[onLine func] Post Lock \n")
+			jm.status.LastCommand = parsed.Raw
+			jm.HandleGcode(parsed.Command)
 
 			if total > 0 {
 				jm.status.DonePercent = float64(sent) / float64(total) * 100
@@ -165,16 +165,15 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 
 			jm.broadcast()
 
-		},
+			// fmt.Printf("[onLine func] Pre pause \n")
 
-		jm.HandleGcode,
+			// for jm.IsPaused() {
+			// 	time.Sleep(100 * time.Millisecond)
+			// 	fmt.Printf("[onLine func] Pause, last cmd %s\n", parsed.Command)
+			// }
 
-		func(line string) error {
-			// Bloqueo aquí, NO en el serial
-			for jm.IsPaused() {
-				time.Sleep(150 * time.Millisecond)
-			}
-			return jm.serial.SendLine(line)
+			// fmt.Printf("[onLine func] Post pause \n")
+
 		},
 	)
 
@@ -296,6 +295,7 @@ func (jm *JobManager) Pause() {
 	jm.mu.Lock()
 	jm.paused = true
 	jm.status.Paused = true
+	jm.serial.SetPaused(true)
 	jm.status.DisplayStatus = "Paused"
 	jm.mu.Unlock()
 }
@@ -304,6 +304,7 @@ func (jm *JobManager) Resume() {
 	jm.mu.Lock()
 	jm.paused = false
 	jm.status.Paused = false
+	jm.serial.SetPaused(false)
 	jm.status.DisplayStatus = "Printing"
 	jm.mu.Unlock()
 }
@@ -315,6 +316,7 @@ func (jm *JobManager) IsPaused() bool {
 }
 
 func (jm *JobManager) HandleGcode(cmd string) {
+	fmt.Println("[HandleGcode]: ", cmd)
 	switch cmd {
 	case "M0", "M1", "M600", "M25":
 		fmt.Println("[JobManager] Pause requested via G-code:", cmd)

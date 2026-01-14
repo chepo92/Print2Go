@@ -9,6 +9,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/chepo92/PrintAndGo/gcode"
 	"github.com/chepo92/PrintAndGo/serial"
@@ -59,6 +60,7 @@ type SerialManager struct {
 	inbound   chan string
 	onLine    func(string)
 
+	paused bool
 	stopCh chan struct{}
 }
 
@@ -85,6 +87,7 @@ func (sm *SerialManager) SetLineHandler(fn func(string)) {
 	sm.onLine = fn
 }
 
+// The real writer
 func (sm *SerialManager) writeLoop() {
 	for {
 		var cmd GcodeCmd
@@ -325,6 +328,7 @@ func (sm *SerialManager) SendGcode(line string, wait bool) error {
 		Line:   strings.TrimSpace(line),
 		RespCh: resp,
 	}
+	fmt.Printf("[SendGcode] Added G-code to Q %s\n", line)
 
 	if wait {
 		return <-resp
@@ -399,9 +403,7 @@ func (sm *SerialManager) SendGcodeFile(r io.Reader) error {
 func (sm *SerialManager) SendGcodeFileWithContext(
 	ctx context.Context,
 	r io.Reader,
-	onLine func(sent int, total int, cmd string),
-	onGcode func(cmd string),
-	send func(line string) error,
+	onLine func(sent int, total int, parsed gcode.Line),
 ) error {
 
 	scanner := bufio.NewScanner(r)
@@ -415,12 +417,12 @@ func (sm *SerialManager) SendGcodeFileWithContext(
 		}
 	}
 
-	// recreamos reader
+	// Reader
 	scanner = bufio.NewScanner(bytes.NewReader(buf))
 
 	sent := 0
 
-	for scanner.Scan() {
+	for {
 
 		select {
 		case <-ctx.Done():
@@ -428,32 +430,57 @@ func (sm *SerialManager) SendGcodeFileWithContext(
 		default:
 		}
 
-		raw := scanner.Text()
-		parsed := gcode.ParseLine(raw)
-		fmt.Printf("[SendGcodeFileWCtx] Sending G-code %s\n", parsed.Raw)
-		if !parsed.HasCommand {
+		// If paused, wait, and continue the loop from start
+		if sm.paused {
+			time.Sleep(100 * time.Millisecond)
+			fmt.Printf("[SendGcodeFileWithContext] Pause 1 \n")
 			continue
 		}
 
-		// Notify gcode to JobManager
-		if onGcode != nil {
-			onGcode(parsed.Raw)
+		// Read line
+		if !scanner.Scan() {
+			break
+		}
+
+		raw := scanner.Text()
+		parsed := gcode.ParseLine(raw)
+
+		if !parsed.HasCommand {
+			fmt.Printf("[SendGcodeFileWCtx] Skipping non G-code: %s\n", parsed.Raw)
+			continue
+		}
+
+		// fmt.Printf("[SendGcodeFileWCtx] Adding G-code to Q %s\n", parsed.Raw)
+
+		// // Notify gcode to JobManager
+		// if onGcode != nil {
+		// 	onGcode(parsed.Raw)
+		// }
+
+		// Check pause again
+		for sm.paused {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				time.Sleep(100 * time.Millisecond)
+				fmt.Printf("[SendGcodeFileWithContext] Pause 2 \n")
+			}
 		}
 
 		if err := sm.SendGcode(parsed.Raw, true); err != nil {
 			return err
 		}
 
-		// call injected send
-		if err := send(parsed.Raw); err != nil {
-			return err
-		}
-
 		sent++
+		// fmt.Printf("[SendGcodeFileWCtx] Calling onLine \n")
 
 		if onLine != nil {
-			onLine(sent, lines, parsed.Raw)
+			onLine(sent, lines, parsed)
 		}
+
+		// fmt.Printf("[SendGcodeFileWCtx] Post onLine \n")
+
 	}
 
 	return scanner.Err()
@@ -463,4 +490,12 @@ func (sm *SerialManager) IsConnected() bool {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	return sm.state == Connected
+}
+
+func (sm *SerialManager) SetPaused(p bool) {
+	sm.paused = p
+}
+
+func (sm *SerialManager) IsPaused() bool {
+	return sm.paused
 }
