@@ -78,10 +78,22 @@ type JobManager struct {
 
 // New crea un JobManager.
 func New(serial *serialmgr.SerialManager) *JobManager {
-	return &JobManager{
+
+	jm := &JobManager{
 		serial:      serial,
 		subscribers: make(map[string]chan JobStatus),
 	}
+
+	// Registramos onLine permanente
+	serial.SetLineHandler(func(line string) {
+		jm.Lock()
+		defer jm.Unlock()
+
+		jm.status.LastReply = line
+		jm.broadcast()
+	})
+
+	return jm
 }
 
 // StartPrint inicia la impresión de un archivo gcode.
@@ -120,9 +132,10 @@ func (jm *JobManager) StartPrint(gcs store.Stream) error {
 		DisplayStatus:  "Printing...",
 	}
 
-	// Configuramos callback para actualizar estado
+	// Broadcast status
 	jm.broadcast()
 
+	// Excecute in go routine
 	fmt.Printf("calling jm.runPrint from StartPrint\n")
 	go jm.runPrint(ctx, gcs)
 
@@ -135,14 +148,13 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 
 	// totalLines := stream.LineCount()
 	//sent := 0
-	jm.serial.SetLineHandler(func(line string) {
-		jm.Lock()
-		defer jm.Unlock()
+	// jm.serial.SetLineHandler(func(line string) {
+	// 	jm.Lock()
+	// 	defer jm.Unlock()
 
-		jm.status.LastReply = line
-		jm.broadcast()
-	})
-
+	// 	jm.status.LastReply = line
+	// 	jm.broadcast()
+	// })
 	fmt.Printf("calling serial.SendGcodeFileWithContext from jm.runPrint \n")
 	err := jm.serial.SendGcodeFileWithContext(
 		ctx,
@@ -200,7 +212,7 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 		jm.status.DisplayStatus = "Error: " + err.Error()
 	}
 
-	jm.serial.SetLineHandler(nil)
+	//jm.serial.SetLineHandler(nil)
 
 	fmt.Printf("jm.Runprint: broadcast \n")
 	jm.broadcast()
