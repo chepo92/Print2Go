@@ -44,10 +44,10 @@ Run as daemon (stops if terminal is closed):
 /usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.155:5001 >/dev/null 2>&1 &
 
 New (no necesita puerto usb)
-nohup ./PrintAndGo -listen 192.168.8.201:5001 >/dev/null 2>&1 &
+nohup ./Print2Go -listen 192.168.8.201:5001 >/dev/null 2>&1 &
 
 New (autodetect ip)
-nohup ./PrintAndGo -ip auto >/dev/null 2>&1 &
+nohup ./Print2Go -ip auto >/dev/null 2>&1 &
 
 remove non-standard line endings from Print2Go-srv, if any was added.
 in openwrt: 
