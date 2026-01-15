@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/chepo92/PrintAndGo/gcode"
-	store "github.com/chepo92/PrintAndGo/storage"
+	"github.com/chepo92/Print2Go/gcode"
+	store "github.com/chepo92/Print2Go/storage"
 )
 
 // LocalStoreFile implements a file stream from a local file.

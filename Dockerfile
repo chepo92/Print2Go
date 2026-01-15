@@ -17,7 +17,7 @@ COPY . .
 # CGO_ENABLED=0 disables CGO, creating a statically linked binary
 # GOOS=linux ensures the binary is built for a Linux environment
 # -o specifies the output file name
-RUN CGO_ENABLED=0 GOOS=linux go build -o PrintAndGo .
+RUN CGO_ENABLED=0 GOOS=linux go build -o Print2Go .
 
 
 # Stage 2: Create the final, minimal image
@@ -30,7 +30,7 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates tzdata
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/PrintAndGo .
+COPY --from=builder /app/Print2Go .
 
 # Expose the port your application listens on (if applicable)
 EXPOSE 5001

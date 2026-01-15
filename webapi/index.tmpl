@@ -362,10 +362,10 @@
         loadData: function () {
           let vx = this;
           jQuery.ajax({
-            url: 'printandgo/job/status',
+            url: 'print2go/job/status',
             data: { id: vx.statusFp },
             error: function (d) {
-              console.log("printandgo/job/status failure, backing off...");
+              console.log("print2go/job/status failure, backing off...");
               setTimeout(vx.loadData, 1000);
             },
             success: function (d) {
@@ -389,20 +389,20 @@
         },
         onCancelJob: function () {
           jQuery.ajax({
-            url: 'printandgo/job/cancel',
+            url: 'print2go/job/cancel',
             method: 'POST',
             data: { cancel: true },
           });
         },
         onShutdownConfirmed: function () {
           jQuery.ajax({
-            url: 'printandgo/device/shutdown',
+            url: 'print2go/device/shutdown',
             method: 'POST',
           });
         },
         onBuiltinGcode: function (arg) {
           jQuery.ajax({
-            url: 'printandgo/gcode/action',
+            url: 'print2go/gcode/action',
             data: { action: arg },
           });
         },
@@ -427,7 +427,7 @@
           data.append("file", this.selectedFile);
           this.selectedFile = "";
           jQuery.ajax({
-            url: 'printandgo/job/create',
+            url: 'print2go/job/create',
             enctype: 'multipart/form-data',
             contentType: false,
             data: data,
@@ -482,7 +482,7 @@
             vx.wapiInfo.Version = d.api;
           },
           error: function (d) {
-            console.log("Error loading PrintAndGo info.");
+            console.log("Error loading Print2Go info.");
           }
         });
       }

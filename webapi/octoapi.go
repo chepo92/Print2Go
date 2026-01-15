@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chepo92/PrintAndGo/job"
-	"github.com/chepo92/PrintAndGo/serial"
+	"github.com/chepo92/Print2Go/job"
+	"github.com/chepo92/Print2Go/serial"
 )
 
 func (wapi *WebApi) octoGetJobStatus(w http.ResponseWriter, r *http.Request) {
@@ -219,7 +219,7 @@ func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
 	}{
 		API:     "0.0.2",
 		Version: "0.0.2",
-		Banner:  "OctoPrint compatible PrintAndGo api",
+		Banner:  "OctoPrint compatible Print2Go api",
 	}
 	jsonWrite(w, reply)
 }
@@ -234,7 +234,7 @@ func octoSettingsReply(w http.ResponseWriter, r *http.Request) {
 			Name string `json:"name"`
 		}{
 
-			Name: "PrintAndGo",
+			Name: "Print2Go",
 		},
 	}
 	jsonWrite(w, reply)

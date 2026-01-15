@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chepo92/PrintAndGo/gcode"
-	"github.com/chepo92/PrintAndGo/serial"
+	"github.com/chepo92/Print2Go/gcode"
+	"github.com/chepo92/Print2Go/serial"
 	hwserial "go.bug.st/serial"
 )
 

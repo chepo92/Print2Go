@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	store "github.com/chepo92/PrintAndGo/storage"
+	store "github.com/chepo92/Print2Go/storage"
 )
 
 type Bufstore struct {

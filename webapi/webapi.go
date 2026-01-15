@@ -9,18 +9,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chepo92/PrintAndGo/serial"
-	"github.com/chepo92/PrintAndGo/serial/serialmgr"
-	store "github.com/chepo92/PrintAndGo/storage"
+	"github.com/chepo92/Print2Go/serial"
+	"github.com/chepo92/Print2Go/serial/serialmgr"
+	store "github.com/chepo92/Print2Go/storage"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	hwserial "go.bug.st/serial"
 
-	"github.com/chepo92/PrintAndGo/job"
+	"github.com/chepo92/Print2Go/job"
 )
 
-// WebApi is the macro structure of PrintAndGo, implements and manages the server and web API, handling storage, print tasks, serial port and camera.
+// WebApi is the macro structure of Print2Go, implements and manages the server and web API, handling storage, print tasks, serial port and camera.
 type WebApi struct {
 	storage FileStorage
 	// camera     *camera.Camera // camera disabled for windows build
@@ -106,7 +106,7 @@ func resolveDisplayIP(host string) string {
 	return "localhost"
 }
 
-// SetVersion sets the current version of PrintAndGo
+// SetVersion sets the current version of Print2Go
 func (wapi *WebApi) SetVersion(v string) {
 	wapi.Version = v
 }
@@ -120,12 +120,12 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Use(middleware.Logger)
 
 	r.Get("/", indexPage)
-	// PrintAndGo api
-	r.Get("/printandgo/job/status", wapi.pagJobStatus)
-	r.Post("/printandgo/job/create", wapi.localUpload)
-	r.Post("/printandgo/job/cancel", wapi.pagJobCancel)
-	r.Post("/printandgo/device/shutdown", wapi.pagShutdown)
-	r.Get("/printandgo/gcode/action", wapi.pagEnqueueBuiltin)
+	// Print2Go api
+	r.Get("/print2go/job/status", wapi.pagJobStatus)
+	r.Post("/print2go/job/create", wapi.localUpload)
+	r.Post("/print2go/job/cancel", wapi.pagJobCancel)
+	r.Post("/print2go/device/shutdown", wapi.pagShutdown)
+	r.Get("/print2go/gcode/action", wapi.pagEnqueueBuiltin)
 
 	// Octoprint-compatibility
 	r.Post("/api/login", octoLoginReply)

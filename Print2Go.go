@@ -10,11 +10,11 @@ import (
 	"os/exec"
 	"runtime"
 
-	// "github.com/chepo92/PrintAndGo/camera"  // Not compatible in windows
+	// "github.com/chepo92/Print2Go/camera"  // Not compatible in windows
 
-	"github.com/chepo92/PrintAndGo/serial"
-	"github.com/chepo92/PrintAndGo/storage/localstore"
-	"github.com/chepo92/PrintAndGo/webapi"
+	"github.com/chepo92/Print2Go/serial"
+	"github.com/chepo92/Print2Go/storage/localstore"
+	"github.com/chepo92/Print2Go/webapi"
 )
 
 var (
@@ -42,14 +42,14 @@ var (
 func init() {
 	if runtime.GOOS == "windows" {
 		defaultTTY = "COM3"
-		defaultStorage = "C:\\PrintAndGo_tmp"
-		defaultShutdown = "C:\\PrintAndGo_shutdown.bat"
+		defaultStorage = "C:\\Print2Go_tmp"
+		defaultShutdown = "C:\\Print2Go_shutdown.bat"
 		defaultMotd = "NUL"
 		defaultCamera = "" // No soportado en Windows
 	} else {
 		defaultTTY = "/dev/ttyUSB0"
-		defaultStorage = "/tmp/PrintAndGo"
-		defaultShutdown = "/usr/lib/printandgo-shutdown.sh"
+		defaultStorage = "/tmp/Print2Go"
+		defaultShutdown = "/usr/lib/print2go-shutdown.sh"
 		defaultMotd = "/dev/null"
 		defaultCamera = "/dev/video0"
 	}
