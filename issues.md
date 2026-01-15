@@ -14,7 +14,7 @@ ok T:16.25 /0.00 B:16.09 /0.00 @:0 B@:0
 M104 S200, responde con
 ok
 
-M109 S100, responde con 
+Algunos M109 S100, responde con 
  T:99.94 /100.00 B:16.21 /0.00 @:17 B@:0 W:4
  T:99.67 /100.00 B:16.13 /0.00 @:25 B@:0 W:3
 echo:busy: processing
