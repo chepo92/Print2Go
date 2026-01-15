@@ -4,7 +4,7 @@
 
 Convert any router with a USB port in a 3D printer host, with an Octoprint-like API
 
-PrintAndGo is a lightweight and simple web based program written in Go to feed gcode to a 3d printer (aka gcode sender, 3d printer host)
+Print2Go is a lightweight and simple web based program written in Go to feed gcode to a 3d printer (aka gcode sender, 3d printer host)
 
 It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to Print2Go.
 
@@ -31,13 +31,13 @@ This project is related to [OctoWrt](https://github.com/shivajiva101/OctoWrt), a
 
 ## Screenshots
 
-![webinterface](/img/printandgo_home_gui.png)
+![webinterface](/img/print2go_home_gui.png)
 
-![webinterface](/img/printandgo_upload.png)
+![webinterface](/img/print2go_upload.png)
 
-![webinterface](/img/printandgo_printing.png)
+![webinterface](/img/print2go_printing.png)
 
-![webinterface](/img/printandgo_done.png)
+![webinterface](/img/print2go_done.png)
 
 
 ##  Install, Run and Usage 
@@ -153,7 +153,7 @@ The endpoints are coded in [webapi.go](/webapi/webapi.go) and implemented in [oc
 
 # Autostart 
 
-Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-scripts), there is an example file included in the repo to make the script autostart at boot as a service. See: [PrintAndGo-srv](/PrintAndGo-srv), modify it acordingly to your configuration and ip.
+Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-scripts), there is an example file included in the repo to make the script autostart at boot as a service. See: [Print2Go-srv](/Print2Go-srv), modify it acordingly to your configuration and ip.
 
 
 # Planned features/idea
