@@ -181,6 +181,15 @@
           <option v-for="p in serial.ports" :value="p">{{ p }}</option>
         </select>
 
+        <select class="form-select form-select-sm w-auto"
+                v-model.number="serial.baudrate"
+                :disabled="serial.state === 'Operational'">
+          <option v-for="b in [9600, 19200, 38400, 57600, 115200, 250000]"
+                  :value="b">
+            {{ b }}
+          </option>
+        </select>
+
         <button v-if="serial.state !== 'Operational'"
                 class="btn btn-sm btn-primary"
                 @click="onSerialConnect">
@@ -234,9 +243,12 @@
             <input v-model="gcodeInput" id="gcodeCmd" placeholder="Send Gcode..." />
             <button @click="sendGcode" type="button"
             class="btn btn-primary">Send</button>
-            <div id="gcodeStatus">     </div>     
+            <div class="mt-1">
+              <small class="text-muted">Last reply:</small>
+              <pre style="white-space: pre-wrap; margin:0;">{{ jobStatus.lastreply }}</pre>
+            </div>
           
-          </li>            
+        </li>            
       </ul>
 
       <div> 
