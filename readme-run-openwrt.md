@@ -16,18 +16,19 @@ Wifi
 
 (thanks octoWRT/klipperWRT)
 
-- Copy/send Print2Go and Print2Go-serv and configure: 
+- Copy/send Print2Go and Print2Go-srv: 
 
 Send to,  Put the Print2Go binary in usr/bin, 
-scp -O Print2Go root@192.168.8.155:/usr/bin
+scp -O Print2Go root@192.168.8.1:/usr/bin
 
 Copy the Print2Go-srv /etc/init.d  autostart script in etc/init.d folder
-scp -O Print2Go-srv root@192.168.8.155:/etc/init.d
+scp -O Print2Go-srv root@192.168.8.1:/etc/init.d
 
 (Optional copy back)
-scp -O root@192.168.8.155:/etc/init.d/Print2Go-srv Print2Go-srv-linux
+scp -O root@192.168.8.1155:/etc/init.d/Print2Go-srv Print2Go-srv-linux
 
-ssh root@192.168.8.155
+Enter ssh as root
+ssh root@192.168.8.1
 
 Make the autostart and the bin executable
 
@@ -35,16 +36,16 @@ chmod +x /etc/init.d/Print2Go-srv
 chmod +x /usr/bin/Print2Go
 
 Test it 
-/usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.203:5001
+/usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.1:5001
 
 Run full headless:
-nohup /usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.155:5001 >/dev/null 2>&1 &
+nohup /usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.1:5001 >/dev/null 2>&1 &
 
 Run as daemon (stops if terminal is closed):
-/usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.155:5001 >/dev/null 2>&1 &
+/usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.1:5001 >/dev/null 2>&1 &
 
-New (no necesita puerto usb)
-nohup ./Print2Go -listen 192.168.8.201:5001 >/dev/null 2>&1 &
+New (no need usb port)
+nohup ./Print2Go -listen 192.168.8.1:5001 >/dev/null 2>&1 &
 
 New (autodetect ip)
 nohup ./Print2Go -ip auto >/dev/null 2>&1 &
@@ -53,12 +54,12 @@ remove non-standard line endings from Print2Go-srv, if any was added.
 in openwrt: 
 sed -i 's/\r//' /etc/init.d/Print2Go-srv
 
-Edit Print2Go-srv, put the right ip
+Edit Print2Go-srv, put the right ip (optional)
 vim /etc/init.d/Print2Go-srv
 
 Escape and Save with: :wq 
  
-Enable
+Enable service
 /etc/init.d/Print2Go-srv enable
 
 Check enabled
