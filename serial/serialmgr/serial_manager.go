@@ -90,6 +90,7 @@ func (sm *SerialManager) SetLineHandler(fn func(string)) {
 // The real writer
 func (sm *SerialManager) writeLoop() {
 	for {
+		fmt.Printf("[SERIAL] writeLoop alive \n")
 		var cmd GcodeCmd
 
 		select {
@@ -117,6 +118,7 @@ func (sm *SerialManager) writeLoop() {
 		for {
 			select {
 			case line := <-sm.inbound:
+				fmt.Printf("[SERIAL] Reply: %s\n", line)
 				if strings.HasPrefix(line, "ok") {
 					if cmd.RespCh != nil {
 						cmd.RespCh <- nil
@@ -131,7 +133,21 @@ func (sm *SerialManager) writeLoop() {
 					goto nextCmd
 				}
 
-				fmt.Printf("[SERIAL] .. %s\n", line)
+				if strings.HasPrefix(line, "Unknown") {
+					if cmd.RespCh != nil {
+						cmd.RespCh <- nil
+					}
+					goto nextCmd
+				}
+
+				if strings.HasPrefix(line, "echo") {
+					fmt.Printf("[SERIAL] Printer echo: %s\n", line)
+				}
+				if strings.HasPrefix(line, "T") {
+					fmt.Printf("[SERIAL] Printer temps: %s\n", line)
+				} else {
+					fmt.Printf("[SERIAL] Unhandled reply: %s\n", line)
+				}
 
 			case <-sm.stopCh:
 				fmt.Printf("[SERIAL] writeLoop stopped\n")
@@ -203,7 +219,7 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 
 	sm.mu.Unlock()
 
-	// --- IO pesado FUERA del lock ---
+	// --- heavy IO out from lock ---
 	port, err := sm.openFn(cfg)
 	if err != nil {
 		sm.mu.Lock()
