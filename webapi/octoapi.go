@@ -375,7 +375,7 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("[octoPrinterCommand] Sending G-code %s\n", cmdList)
 
-	// FASE ACTUAL: envío directo, sin task, sin parser
+	//
 	for _, c := range cmdList {
 		c = strings.TrimSpace(c)
 		if c == "" {
