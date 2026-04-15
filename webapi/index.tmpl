@@ -134,6 +134,18 @@
             <button v-on:click="onApiPrinterCmd('M290 Z-0.025')" type="button"
               class="btn btn-primary">Z Height -25µm</button>          
           </li>
+          <li class="list-group-item">
+            <input v-model="gcodeInput"
+                  placeholder="Send Gcode..."
+                  :disabled="!jobStatus.paused" />
+
+            <button @click="sendGcode"
+                    class="btn btn-primary"
+                    :disabled="!jobStatus.paused || !gcodeInput">
+              Send
+            </button>
+            
+          </li>          
         </ul>
 
         <br>
@@ -285,6 +297,7 @@
         viewJobStatus: false,
         selectedFile: "",
         gcodeInput: "",
+        lastActive: false,
         pauseText: "Pause",
         statusFp: -1,
         wapiInfo: {
@@ -369,6 +382,23 @@
               setTimeout(vx.loadData, 1000);
             },
             success: function (d) {
+
+              let wasActive = vx.lastActive;
+              let isActive = d.active;
+
+              // clean if change to active
+              if (!wasActive && isActive) {
+                vx.gcodeInput = "";
+              }
+
+              // clean if change to idle
+              if (wasActive && !isActive) {
+                vx.gcodeInput = "";
+              }
+
+              // save new state
+              vx.lastActive = isActive;              
+
               vx.jobStatus = d;
               vx.statusFp = d.fp;
               if (d.active == true) {
