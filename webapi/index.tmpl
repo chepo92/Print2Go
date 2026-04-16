@@ -308,7 +308,7 @@
           ports: [],
           selectedPort: "",
           baudrate: 115200, 
-          autoConnect: false
+          autoConnect: true
         }       
       },
       methods: {
@@ -320,7 +320,7 @@
             success: function (d) {
               vx.serial.state = d.current.state;
               vx.serial.ports = d.options.ports;
-              vx.serial.selectedPort = d.current.port || d.options.ports[0] || "";
+              vx.serial.selectedPort = d.current.port || (d.options.ports && d.options.ports[0]) || "";
               vx.serial.baudrate = d.current.baudrate || 115200;
 
               vx.serial.Port = d.current.port;
@@ -332,7 +332,7 @@
                 vx.serial.state !== "Operational" &&
                 vx.serial.ports.length > 0
               ) {
-                console.log("[auto-connect] Attempting connection on", vx.serial.selectedPort);
+                console.log("[auto-connect] Attempting connection on", vx.serial.selectedPort, "at ", vx.serial.baudrate);
                 vx.onSerialConnect();
               }              
             }
@@ -347,7 +347,7 @@
             data: JSON.stringify({
               command: "connect",
               port: vx.serial.selectedPort || "AUTO",
-              baudrate: vx.serial.baudrate, 
+              baudrate: vx.serial.baudrate || 115200, 
               autoconnect: true
             }),
             success: function () {

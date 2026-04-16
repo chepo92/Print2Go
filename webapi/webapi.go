@@ -64,7 +64,7 @@ func New(listenAddr string, store FileStorage, motdFile string, openSerial func(
 		//task: task.New(),
 	}
 
-	// wapi.initAutoConnect()
+	wapi.initAutoConnect()
 
 	wapi.serial.OnConnected = func() {
 		go wapi.sendInstanceM117()
@@ -188,7 +188,7 @@ func octoStateFromSerial(s serialmgr.SerialState) string {
 
 func (wapi *WebApi) initAutoConnect() {
 	go func() {
-		time.Sleep(2 * time.Second) // dar tiempo a detectar puertos
+		time.Sleep(5 * time.Second) // dar tiempo a detectar puertos
 		req := map[string]any{
 			"command":     "connect",
 			"port":        "AUTO",
