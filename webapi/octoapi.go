@@ -441,9 +441,11 @@ func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, r *http.Reques
 	cfg := wapi.serial.GetConfig()
 
 	ports, err := serial.ListPorts()
+
 	if err != nil {
 		ports = []string{} // fallback seguro
 	}
+	ports_filtered := wapi.serial.FilterPorts(ports)
 
 	reply := ConnectionReply{
 		Current: struct {
@@ -469,7 +471,7 @@ func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, r *http.Reques
 			PrinterProfilePreference string `json:"printerProfilePreference"`
 			Autoconnect              bool   `json:"autoconnect"`
 		}{
-			Ports:     ports,
+			Ports:     ports_filtered,
 			Baudrates: []int{115200, 250000, 230400, 57600, 38400, 19200, 9600},
 			PrinterProfiles: []struct {
 				Name string `json:"name"`

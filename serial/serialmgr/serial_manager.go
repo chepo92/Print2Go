@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -200,6 +201,38 @@ func (sm *SerialManager) readLoop() {
 				handler(line)
 			}
 		}
+	}
+}
+
+func (sm *SerialManager) FilterPorts(ports []string) []string {
+	var out []string
+
+	for _, p := range ports {
+		if isValidPort(p) {
+			out = append(out, p)
+
+		} else {
+			fmt.Printf("[SERIAL] Ignoring port: %s\n", p)
+		}
+	}
+
+	return out
+}
+
+func isValidPort(p string) bool {
+	switch runtime.GOOS {
+
+	case "windows":
+		// Solo COMx (COM1, COM3, etc.)
+		return strings.HasPrefix(strings.ToUpper(p), "COM")
+
+	case "linux":
+		// Solo dispositivos USB reales
+		return strings.HasPrefix(p, "/dev/ttyUSB") ||
+			strings.HasPrefix(p, "/dev/ttyACM")
+
+	default:
+		return true // fallback (macOS, etc.)
 	}
 }
 
