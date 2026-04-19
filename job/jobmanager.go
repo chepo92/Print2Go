@@ -40,6 +40,8 @@ type JobStatus struct {
 
 	PrintReport string `json:"printReport"`
 
+	SerialLog []SerialLogEntry `json:"serial_log"`
+
 	Motd string `json:"motd"`
 }
 
@@ -57,6 +59,12 @@ type JobStatus struct {
 // 	Status      string        `json:"status"`
 // 	Error       bool          `json:"error"`
 // }
+
+type SerialLogEntry struct {
+	Type string `json:"type"` // "cmd" | "resp"
+	Line string `json:"line"`
+	Ts   int64  `json:"ts"`
+}
 
 // JobManager gestiona un trabajo activo y notifica a suscriptores.
 type JobManager struct {
@@ -90,10 +98,27 @@ func New(serial *serialmgr.SerialManager) *JobManager {
 		defer jm.Unlock()
 
 		jm.status.LastReply = line
+
+		jm.AddLog(SerialLogEntry{
+			Type: "resp",
+			Line: line,
+			Ts:   time.Now().Unix(),
+		})
+
 		jm.broadcast()
 	})
 
 	return jm
+}
+
+const maxLogLines = 200
+
+func (jm *JobManager) AddLog(entry SerialLogEntry) {
+	jm.status.SerialLog = append(jm.status.SerialLog, entry)
+
+	if len(jm.status.SerialLog) > maxLogLines {
+		jm.status.SerialLog = jm.status.SerialLog[len(jm.status.SerialLog)-maxLogLines:]
+	}
 }
 
 // StartPrint inicia la impresión de un archivo gcode.
@@ -166,6 +191,13 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 
 			// fmt.Printf("[onLine func] Post Lock \n")
 			jm.status.LastCommand = parsed.Raw
+
+			jm.AddLog(SerialLogEntry{
+				Type: "cmd",
+				Line: parsed.Raw,
+				Ts:   time.Now().Unix(),
+			})
+
 			jm.HandleGcode(parsed.Command)
 
 			if total > 0 {
@@ -248,6 +280,12 @@ func (jm *JobManager) SendPriorityCommand(cmd string) error {
 	if !jm.serial.IsConnected() {
 		return fmt.Errorf("serial not connected")
 	}
+
+	jm.AddLog(SerialLogEntry{
+		Type: "cmd",
+		Line: cmd,
+		Ts:   time.Now().Unix(),
+	})
 
 	// Actualizar estado para la UI
 	jm.status.LastCommand = cmd

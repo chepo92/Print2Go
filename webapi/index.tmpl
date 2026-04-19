@@ -171,62 +171,69 @@
     </template>
     <template v-else>
 
-    <div class="card mb-3">
-      <div class="card-body d-flex align-items-center gap-2">
+<div class="card mb-3">
 
-        <strong>Printer:</strong>
+  <!-- Estado -->
+  <div class="card-body d-flex align-items-center">
+    <strong class="mr-2">Printer:</strong>
+    <span
+      class="badge"
+      :class="serial.state === 'Operational' ? 'bg-success' : 'bg-secondary'">
+      {{ serial.state }}
+    </span>
+  </div>
 
-        <span
-          class="badge"
-          :class="serial.state === 'Operational' ? 'bg-success' : 'bg-secondary'">
-          {{ serial.state }}
-        </span>
+  <!-- Controles -->
+  <div class="card-body d-flex align-items-center flex-wrap">
 
-        
-      </div>
+    <!-- Grupo conexión -->
+    <div class="d-flex align-items-center mr-4">
 
-      <div class="card-body d-flex align-items-center gap-2">
+      <select class="form-select form-select-sm w-auto mr-2"
+              v-model="serial.selectedPort"
+              :disabled="serial.state === 'Operational'">
+        <option v-for="p in serial.ports" :value="p">{{ p }}</option>
+      </select>
 
-        <select class="form-select form-select-sm w-auto"
-                v-model="serial.selectedPort"
-                :disabled="serial.state === 'Operational'">
-          <option v-for="p in serial.ports" :value="p">{{ p }}</option>
-        </select>
+      <select class="form-select form-select-sm w-auto mr-2"
+              v-model.number="serial.baudrate"
+              :disabled="serial.state === 'Operational'">
+        <option v-for="b in [9600, 19200, 38400, 57600, 115200, 250000]"
+                :value="b">
+          {{ b }}
+        </option>
+      </select>
 
-        <select class="form-select form-select-sm w-auto"
-                v-model.number="serial.baudrate"
-                :disabled="serial.state === 'Operational'">
-          <option v-for="b in [9600, 19200, 38400, 57600, 115200, 250000]"
-                  :value="b">
-            {{ b }}
-          </option>
-        </select>
+      <button v-if="serial.state !== 'Operational'"
+              class="btn btn-sm btn-primary mr-2"
+              @click="onSerialConnect">
+        Connect
+      </button>
 
-        <button v-if="serial.state !== 'Operational'"
-                class="btn btn-sm btn-primary"
-                @click="onSerialConnect">
-          Connect
-        </button>
+      <button v-else
+              class="btn btn-sm btn-danger mr-2"
+              @click="onSerialDisconnect">
+        Disconnect
+      </button>
 
-        <button v-else
-                class="btn btn-sm btn-danger"
-                @click="onSerialDisconnect">
-          Disconnect
-        </button>
-        <br> 
-        
-        <div class="form-check mt-2">
-          <input class="form-check-input"
-                type="checkbox"
-                id="autoConnect"
-                v-model="serial.autoConnect">
-          <label class="form-check-label" for="autoConnect">
-            Auto-connect on startup
-          </label>
-        </div>        
+    </div>
 
-      </div>      
-    </div>      
+    <!-- Grupo autoconnect -->
+    <div class="form-check mt-2 mt-md-0">
+      <input class="form-check-input"
+            type="checkbox"
+            id="autoConnect"
+            v-model="serial.autoConnect">
+      <label class="form-check-label ml-1" for="autoConnect">
+        Auto-connect on startup
+      </label>
+    </div>
+
+  </div>
+
+</div>
+
+
       <div class="alert alert-primary" role="alert">Print2Go is idle, serial port is: {{ serial.Port }} </div>
 
       <ul class="list-group">
@@ -251,20 +258,41 @@
             class="btn btn-primary">Reset printer</button></li>
         <li class="list-group-item"><button data-toggle="modal" data-target="#confirmShutdownDialog" type="button"
             class="btn btn-danger">Run shutdown script</button></li>
-        <li class="list-group-item">
+            
+      </ul>
+
+  <div class="card mt-3">
+    <div class="card-header">
+      Serial Console
+    </div>
+
+    <div class="card-body"
+        style="max-height: 300px; overflow-y: auto; font-family: monospace; background:#ffffff; color:#000000;">
             <input v-model="gcodeInput" id="gcodeCmd" placeholder="Send Gcode..." />
             <button @click="sendGcode" type="button"
             class="btn btn-primary">Send</button>
             <div class="mt-1">
               <small class="text-muted">Last reply:</small>
               <pre style="white-space: pre-wrap; margin:0;">{{ jobStatus.lastreply }}</pre>
-            </div>
-          
-        </li>            
-      </ul>
+            </div> 
 
-      <div> 
+    </div>
+
+
+    <div class="card-body"
+        style="max-height: 300px; overflow-y: auto; font-family: monospace; background:#111; color:#eee;">
+
+      <div v-for="(l, i) in jobStatus.serial_log" :key="i">
+        <span v-if="l.type === 'cmd'" style="color:#4caf50">
+          >> {{ l.line }}
+        </span>
+        <span v-else style="color:#03a9f4">
+          << {{ l.line }}
+        </span>
       </div>
+
+    </div>
+  </div>
 
     </template>
 
@@ -282,7 +310,7 @@
         </a>
       </div>
       <div class="container">
-        <span class="text-muted">Print2Go v{{ wapiInfo.Version }}</span>
+        <span class="text-muted">Print2Go v{{ wapiInfo.Version.server }} - Octoprint API v{{ wapiInfo.Version.api }}</span>
       </div>
     </footer>
 
@@ -301,7 +329,10 @@
         pauseText: "Pause",
         statusFp: -1,
         wapiInfo: {
-          Version: ""
+          Version: {
+            api: "", 
+            server: ""
+          }
         },
         serial: {
           state: "Closed",
@@ -500,6 +531,14 @@
           }).catch(err => console.error("pause error", err));
         },
       },
+
+      updated() {
+        this.$nextTick(() => {
+          const el = this.$el.querySelector('.card-body');
+          if (el) el.scrollTop = el.scrollHeight;
+        });
+      },
+      
       mounted: function () {
         setTimeout(this.loadData, 0);
         this.loadConnection();
@@ -509,7 +548,8 @@
           url: '/api/version',
           method: 'GET',
           success: function (d) {
-            vx.wapiInfo.Version = d.api;
+            vx.wapiInfo.Version.api = d.api;
+            vx.wapiInfo.Version.server = d.server;
           },
           error: function (d) {
             console.log("Error loading Print2Go info.");
