@@ -10,6 +10,7 @@ import (
 
 	"github.com/chepo92/Print2Go/job"
 	"github.com/chepo92/Print2Go/serial"
+	"github.com/chepo92/Print2Go/version"
 )
 
 func (wapi *WebApi) octoGetJobStatus(w http.ResponseWriter, r *http.Request) {
@@ -217,9 +218,9 @@ func octoVersionReply(w http.ResponseWriter, rq *http.Request) {
 		Version string `json:"server"`
 		Banner  string `json:"text"`
 	}{
-		API:     "0.0.2",
-		Version: "0.0.2",
-		Banner:  "OctoPrint compatible Print2Go api",
+		API:     version.API,
+		Version: version.Version,
+		Banner:  version.Banner,
 	}
 	jsonWrite(w, reply)
 }
@@ -386,6 +387,7 @@ func (wapi *WebApi) octoPrinterCommand(w http.ResponseWriter, r *http.Request) {
 			wapi.error(w, err.Error())
 			return
 		}
+
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -409,7 +411,7 @@ func octoServerReply(w http.ResponseWriter, rq *http.Request) {
 		Version  string `json:"version"`
 		Safemode string `json:"safemode"`
 	}{
-		Version:  "0.0.0",
+		Version:  version.Version,
 		Safemode: "false",
 	}
 	jsonWrite(w, reply)
