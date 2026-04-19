@@ -156,8 +156,9 @@ The endpoints are coded in [webapi.go](/webapi/webapi.go) and implemented in [oc
 Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-scripts), there is an example file included in the repo to make the script autostart at boot as a service. See: [Print2Go-srv](/Print2Go-srv), modify it acordingly to your configuration and ip.
 
 
-# Planned features/idea
+# Future features and ideas
 
+- [ ] Improve UI/UX
 - [ ] Telegram Notification integration
 - [ ] Homeassistant integration
 - [x] Send custom commands
