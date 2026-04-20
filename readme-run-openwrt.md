@@ -18,14 +18,14 @@ Wifi
 
 - Copy/send Print2Go and Print2Go-srv: 
 
-Send to,  Put the Print2Go binary in usr/bin, 
+Send to device, put the Print2Go binary in usr/bin, 
 scp -O Print2Go root@192.168.8.1:/usr/bin
 
 Copy the Print2Go-srv /etc/init.d  autostart script in etc/init.d folder
 scp -O Print2Go-srv root@192.168.8.1:/etc/init.d
 
 (Optional copy back)
-scp -O root@192.168.8.1155:/etc/init.d/Print2Go-srv Print2Go-srv-linux
+scp -O root@192.168.8.1:/etc/init.d/Print2Go-srv Print2Go-srv-linux
 
 Enter ssh as root
 ssh root@192.168.8.1
@@ -71,3 +71,5 @@ service Print2Go-srv start
 Check status 
 service Print2Go-srv status
 
+OpenWRT Luci interface
+http://192.168.8.1:81/cgi-bin/luci/

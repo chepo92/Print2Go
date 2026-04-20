@@ -159,6 +159,9 @@ Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-s
 # Future features and ideas
 
 - [ ] Improve UI/UX
+- [ ] Persist config
+- [ ] Print file in storage
+- [ ] Disable controls when printer is not connected
 - [ ] Telegram Notification integration
 - [ ] Homeassistant integration
 - [x] Send custom commands

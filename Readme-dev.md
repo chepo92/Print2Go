@@ -45,14 +45,14 @@ $ cd Print2Go
 4. In the interactive terminal (IT), build the Print2Go project (use a the cross compile command from above if the case): 
 `go build -o ./builds/Print2Go .`
 
-5. Once build, copy files back to host (eg. after cross compile, get the binaries), run i nthe host: 
+5. Once build, copy files back to host (eg. after cross compile, get the binaries), run in the host: 
 Copy one file
 `docker cp go-builder:/app/builds/Print2GoLinux ./builds/Print2GoLinux`
 Copy all folder
 `docker cp go-builder:/app/builds/ .`
 
 6. If you need to update the source, copy files from host to container (eg. developed new code and need to compile in docker), better to delete previous files if made a lot of changes
-In the container (IT), remove existing app files: 
+In the container (Interactive Terminal), remove existing app files: 
 `cd /app/ && rm -r *`
 Then in the **host**, copy to container: 
 `docker cp ./ go-builder:/app/`
