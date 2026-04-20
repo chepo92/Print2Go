@@ -63,6 +63,8 @@ type SerialManager struct {
 
 	paused bool
 	stopCh chan struct{}
+
+	OnAction func(action string)
 }
 
 type GcodeCmd struct {
@@ -125,26 +127,20 @@ func (sm *SerialManager) writeLoop() {
 						cmd.RespCh <- nil
 					}
 					goto nextCmd
-				}
-
-				if strings.HasPrefix(line, "error") {
+				} else if strings.HasPrefix(line, "error") {
 					if cmd.RespCh != nil {
 						cmd.RespCh <- fmt.Errorf(line)
 					}
 					goto nextCmd
-				}
-
-				if strings.HasPrefix(line, "Unknown") {
+				} else if strings.HasPrefix(line, "Unknown") {
 					if cmd.RespCh != nil {
 						cmd.RespCh <- nil
 					}
 					goto nextCmd
-				}
-
-				if strings.HasPrefix(line, "echo") {
+				} else if strings.HasPrefix(line, "echo") {
 					fmt.Printf("[SERIAL] Printer echo: %s\n", line)
-				}
-				if strings.HasPrefix(line, "T") {
+
+				} else if strings.HasPrefix(line, "T") {
 					fmt.Printf("[SERIAL] Printer temps: %s\n", line)
 				} else {
 					fmt.Printf("[SERIAL] Unhandled reply: %s\n", line)
@@ -191,6 +187,16 @@ func (sm *SerialManager) readLoop() {
 			case sm.inbound <- line:
 			default:
 				fmt.Printf("[SERIAL] inbound buffer full, dropping line\n")
+			}
+
+			if strings.HasPrefix(line, "M118") {
+				if strings.Contains(line, "//action:pause") {
+					sm.handleAction("pause")
+				} else if strings.Contains(line, "//action:resume") {
+					sm.handleAction("resume")
+				} else if strings.Contains(line, "//action:cancel") {
+					sm.handleAction("cancel")
+				}
 			}
 
 			sm.mu.Lock()
@@ -547,4 +553,12 @@ func (sm *SerialManager) SetPaused(p bool) {
 
 func (sm *SerialManager) IsPaused() bool {
 	return sm.paused
+}
+
+func (sm *SerialManager) handleAction(action string) {
+	fmt.Printf("[SERIAL] Action received: %s\n", action)
+
+	if sm.OnAction != nil {
+		sm.OnAction(action)
+	}
 }

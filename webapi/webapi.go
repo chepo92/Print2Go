@@ -64,6 +64,22 @@ func New(listenAddr string, store FileStorage, motdFile string, openSerial func(
 		//task: task.New(),
 	}
 
+	wapi.serial.OnAction = func(action string) {
+		switch action {
+		case "pause":
+			fmt.Println("[ACTION] pause requested from printer")
+			wapi.jobManager.Pause()
+
+		case "resume":
+			fmt.Println("[ACTION] resume requested from printer")
+			wapi.jobManager.Resume()
+
+		case "cancel":
+			fmt.Println("[ACTION] cancel requested from printer")
+			wapi.jobManager.Cancel()
+		}
+	}
+
 	wapi.initAutoConnect()
 
 	wapi.serial.OnConnected = func() {
