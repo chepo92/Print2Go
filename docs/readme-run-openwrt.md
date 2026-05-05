@@ -19,7 +19,7 @@ Wifi
 # Copy/send Print2Go and Print2Go-srv: 
 
 # Send to device, put the Print2Go binary in usr/bin, use the right ip address
-scp -O ./builds/Print2Go-mipsle root@192.168.8.1:/usr/bin/Print2Go
+scp -O ./dist/Print2Go-mipsle root@192.168.8.1:/usr/bin/Print2Go
 
 # Copy the Print2Go-srv /etc/init.d  autostart script in etc/init.d folder
 scp -O Print2Go-srv root@192.168.8.1:/etc/init.d
