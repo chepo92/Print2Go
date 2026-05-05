@@ -5,13 +5,13 @@ FROM golang:1.22-alpine AS builder
 WORKDIR /app
 
 # Copy go.mod and go.sum files to leverage Docker's layer caching
-COPY go.mod go.sum ./
+COPY src/go.mod src/go.sum ./
 
 # Download Go modules
 RUN go mod download
 
 # Copy the rest of the application source code
-COPY . .
+COPY src/. .
 
 # Build the Go application
 # CGO_ENABLED=0 disables CGO, creating a statically linked binary
