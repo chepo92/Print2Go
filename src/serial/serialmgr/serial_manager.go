@@ -308,6 +308,7 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	// Init write and read Loops
 	go sm.writeLoop()
 	go sm.readLoop()
+	go sm.tempLoop()
 
 	if sm.OnConnected != nil {
 		sm.OnConnected()
@@ -618,4 +619,37 @@ func parseTemps(line string) (TempState, bool) {
 	}
 
 	return t, false
+}
+
+func (sm *SerialManager) tempLoop() {
+	fmt.Println("[SERIAL] tempLoop started")
+
+	for {
+		select {
+		case <-sm.stopCh:
+			fmt.Println("[SERIAL] tempLoop stopped")
+			return
+
+		default:
+			if sm.IsConnected() {
+				sm.SendGcodePriority("M105", false)
+			}
+
+			time.Sleep(sm.tempPollDelay())
+		}
+	}
+}
+
+func (sm *SerialManager) tempPollDelay() time.Duration {
+	if sm.IsPrinting() {
+		return 2 * time.Second
+	}
+
+	return 5 * time.Second
+}
+
+func (sm *SerialManager) IsPrinting() bool {
+	//job := sm.jobManager.Snapshot()
+	//return job.Active && !job.Paused
+	return !sm.paused
 }
