@@ -251,8 +251,19 @@ func octoLoginReply(w http.ResponseWriter, r *http.Request) {
 	jsonWrite(w, reply)
 }
 
+type tempValue struct {
+	Actual *float64 `json:"actual"`
+	Target *float64 `json:"target"`
+	Offset int      `json:"offset"`
+}
+
+type temperatureReply struct {
+	Tool0 *tempValue `json:"tool0,omitempty"`
+	Bed   *tempValue `json:"bed,omitempty"`
+}
+
 type octoPrinterReply struct {
-	Temperature map[string]any `json:"temperature"`
+	Temperature temperatureReply `json:"temperature"`
 	SD          struct {
 		Ready bool `json:"ready"`
 	} `json:"sd"`
@@ -275,6 +286,7 @@ type printerFlags struct {
 }
 
 func (wapi *WebApi) octoPrinterReply(w http.ResponseWriter, r *http.Request) {
+	reply := octoPrinterReply{}
 
 	connected := wapi.serial.IsConnected()
 	job := wapi.jobManager.Snapshot()
@@ -308,8 +320,21 @@ func (wapi *WebApi) octoPrinterReply(w http.ResponseWriter, r *http.Request) {
 
 	flags.SdReady = connected
 
-	reply := octoPrinterReply{
-		Temperature: map[string]any{}, // Empty for now TBI
+	temps := wapi.serial.Temps()
+
+	if temps.Valid {
+		reply.Temperature = temperatureReply{
+			Tool0: &tempValue{
+				Actual: f64(temps.ToolActual),
+				Target: f64(temps.ToolTarget),
+				Offset: 0,
+			},
+			Bed: &tempValue{
+				Actual: f64(temps.BedActual),
+				Target: f64(temps.BedTarget),
+				Offset: 0,
+			},
+		}
 	}
 
 	reply.SD.Ready = flags.SdReady
@@ -317,6 +342,10 @@ func (wapi *WebApi) octoPrinterReply(w http.ResponseWriter, r *http.Request) {
 	reply.State.Flags = flags
 
 	jsonWrite(w, reply)
+}
+
+func f64(v float64) *float64 {
+	return &v
 }
 
 type Commands struct {

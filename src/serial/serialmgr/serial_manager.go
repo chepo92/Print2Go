@@ -65,12 +65,28 @@ type SerialManager struct {
 	stopCh chan struct{}
 
 	OnAction func(action string)
+
+	temps TempState
 }
 
 type GcodeCmd struct {
 	Line     string
 	Priority bool
 	RespCh   chan error // nil si no se espera ACK
+}
+
+type TempState struct {
+	ToolActual float64
+	ToolTarget float64
+	BedActual  float64
+	BedTarget  float64
+	Valid      bool
+}
+
+func (sm *SerialManager) Temps() TempState {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	return sm.temps
 }
 
 func New(openFn func(serial.SerialConfig) (hwserial.Port, error)) *SerialManager {
@@ -122,6 +138,13 @@ func (sm *SerialManager) writeLoop() {
 			select {
 			case line := <-sm.inbound:
 				fmt.Printf("[SERIAL] Reply: %s\n", line)
+
+				if temp, ok := parseTemps(line); ok {
+					sm.mu.Lock()
+					sm.temps = temp
+					sm.mu.Unlock()
+				}
+
 				if strings.HasPrefix(line, "ok") {
 					if cmd.RespCh != nil {
 						cmd.RespCh <- nil
@@ -561,4 +584,38 @@ func (sm *SerialManager) handleAction(action string) {
 	if sm.OnAction != nil {
 		sm.OnAction(action)
 	}
+}
+
+func parseTemps(line string) (TempState, bool) {
+	var t TempState
+
+	_, err := fmt.Sscanf(
+		line,
+		"ok T:%f /%f B:%f /%f",
+		&t.ToolActual,
+		&t.ToolTarget,
+		&t.BedActual,
+		&t.BedTarget,
+	)
+
+	if err == nil {
+		t.Valid = true
+		return t, true
+	}
+
+	_, err = fmt.Sscanf(
+		line,
+		"T:%f /%f B:%f /%f",
+		&t.ToolActual,
+		&t.ToolTarget,
+		&t.BedActual,
+		&t.BedTarget,
+	)
+
+	if err == nil {
+		t.Valid = true
+		return t, true
+	}
+
+	return t, false
 }
