@@ -1,3 +1,9 @@
+- Save and persistent config
+- Mordernize Js
+- Modularize functions
+- Migrate to Vue 3
+
+
 Usefull information for running go in openWRT
 
 https://go.dev/wiki/GoMips

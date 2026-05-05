@@ -1,6 +1,6 @@
-- Install openwrt
+# Install openwrt
 
-- Configure network, decide if the final setup will use ethernet or wifi: 
+# Configure network, decide if the final setup will use ethernet or wifi: 
 LAN: 
     - Conect LAN cable to a pc
     - Configure LAN ip to something available in your main network (or set to dynamic and set a fixed ip for the box on your main router)
@@ -12,28 +12,31 @@ Wifi
     - Save and apply
     - Configure WLAN ip to something available in your main network (or set to dynamic and set a fixed ip for the box on your main router)
     
-- Apply extroot :
+# Apply extroot :
 
 (thanks octoWRT/klipperWRT)
 
-- Copy/send Print2Go and Print2Go-srv: 
+# Copy/send Print2Go and Print2Go-srv: 
 
-Send to device, put the Print2Go binary in usr/bin, 
-scp -O Print2Go root@192.168.8.1:/usr/bin
+# Send to device, put the Print2Go binary in usr/bin, use the right ip address
+scp -O ./builds/Print2Go-mipsle root@192.168.8.1:/usr/bin/Print2Go
 
-Copy the Print2Go-srv /etc/init.d  autostart script in etc/init.d folder
+# Copy the Print2Go-srv /etc/init.d  autostart script in etc/init.d folder
 scp -O Print2Go-srv root@192.168.8.1:/etc/init.d
 
 (Optional copy back)
 scp -O root@192.168.8.1:/etc/init.d/Print2Go-srv Print2Go-srv-linux
 
-Enter ssh as root
+# Enter ssh as root
 ssh root@192.168.8.1
 
-Make the autostart and the bin executable
+# Make the autostart and the bin executable
 
 chmod +x /etc/init.d/Print2Go-srv
 chmod +x /usr/bin/Print2Go
+
+List files 
+ls /usr/bin/
 
 Test it 
 /usr/bin/Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.1:5001
@@ -71,5 +74,5 @@ service Print2Go-srv start
 Check status 
 service Print2Go-srv status
 
-OpenWRT Luci interface
+Enter OpenWRT Luci interface
 http://192.168.8.1:81/cgi-bin/luci/

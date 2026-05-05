@@ -62,7 +62,7 @@ Then, back in the container, you can build (step 4) and copy back to host (step 
 
 Go can be cross compiled
 Example for MIPS Little Endian
-`GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/Print2Go_mipsle .`
+`GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ./builds/Print2Go_mipsle ./src`
 
 ## Build with docker
 1.Build docker image with updated files, no cache if anything changed (for dev), dockerfile and docker image can be modified with cross compile commands

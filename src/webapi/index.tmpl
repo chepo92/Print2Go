@@ -317,7 +317,8 @@
   </div>
 
   <script>
-
+    const DEFAULT_BAUDRATE = 250000;
+    
     new Vue({
       el: '#app',
       data: {
@@ -338,7 +339,7 @@
           state: "Closed",
           ports: [],
           selectedPort: "",
-          baudrate: 115200, 
+          baudrate: DEFAULT_BAUDRATE,
           autoConnect: true
         }       
       },
@@ -352,7 +353,7 @@
               vx.serial.state = d.current.state;
               vx.serial.ports = d.options.ports;
               vx.serial.selectedPort = d.current.port || (d.options.ports && d.options.ports[0]) || "";
-              vx.serial.baudrate = d.current.baudrate || 115200;
+              vx.serial.baudrate = d.current.baudrate ?? DEFAULT_BAUDRATE;
 
               vx.serial.Port = d.current.port;
               vx.serial.BaudRate = d.current.baudrate;
@@ -378,7 +379,7 @@
             data: JSON.stringify({
               command: "connect",
               port: vx.serial.selectedPort || "AUTO",
-              baudrate: vx.serial.baudrate || 115200, 
+              baudrate: vx.serial.baudrate ?? DEFAULT_BAUDRATE,
               autoconnect: true
             }),
             success: function () {
