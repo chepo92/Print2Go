@@ -1,5 +1,3 @@
-
-
 Creo que no está esperando en ciertos casos, por ejemplo el firmware stock de ender, al estar moviendo por ejemplo G28 enviara
 echo:busy: processing
 mientras este procesando, tambien enviara:
@@ -26,16 +24,23 @@ ok
 
 To Do
 
-
 Backend
-- Save and persistent config
-- Agregar timeout para cuando no se realiza la conexion inicial y se queda pegada
-- Detect stale print
-- Read and report temps
+- [ ] Save and persist config
+- [ ] Agregar timeout para cuando no se realiza la conexion inicial y se queda pegada
+- [ ] Detect stale print
+- [x] Read and report temps
+- [ ] Save file
+- [ ] Timelapse 
 
 Frontend
-- Mordernize Js
-- Modularize functions
-- Migrate to Vue 3
+- [ ] Mordernize Js
+- [ ] Modularize functions
+- [ ] Migrate to Vue 3
+- [ ] Add controls
+- [ ] File search 
+- [ ] Control for individual and custom setpoint of temps
+- [ ] Gcode Viewer
+
+
 
 
