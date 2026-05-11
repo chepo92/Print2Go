@@ -205,7 +205,7 @@ func (jm *JobManager) runPrint(ctx context.Context, stream store.Stream) {
 			}
 			jm.status.PrintReport = fmt.Sprintf("Progress: %.1f%% | Line %d of %d", jm.status.DonePercent, sent, total)
 
-			jm.status.RunDuration = time.Since(jm.status.StartTime).Truncate(time.Second).String()
+			jm.status.RunDuration = jm.formatDuration(time.Since(jm.status.StartTime))
 
 			jm.broadcast()
 
@@ -375,4 +375,17 @@ func (jm *JobManager) HandleGcode(cmd string) {
 		fmt.Println("[JobManager] Resume requested via G-code:", cmd)
 		jm.Resume()
 	}
+}
+
+func (jm *JobManager) formatDuration(d time.Duration) string {
+	d = d.Truncate(time.Second)
+
+	h := int(d.Hours())
+	m := int(d.Minutes()) % 60
+	s := int(d.Seconds()) % 60
+
+	if h > 0 {
+		return fmt.Sprintf("%dh %02dm %02ds", h, m, s)
+	}
+	return fmt.Sprintf("%dm %02ds", m, s)
 }
