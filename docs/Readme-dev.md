@@ -106,11 +106,11 @@ $ kill -USR1 351  # send SIGUSR1
 Build image
 `docker build -f docker/Dockerfile --target builder -t print2go-builder .`
 
-Create container: 
+Create container, just run once for the first time: 
 Create container by mounting volume (changes are reflected instantly within the container)
 `docker run -it --name print2go-dev -v ${PWD}:/workspace -w /workspace/src print2go-builder sh`
 
-Start anytime
+Start anytime, subsequent executions
 `docker start -ai print2go-dev`
 
 Build app, eg. 

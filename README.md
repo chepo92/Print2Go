@@ -113,10 +113,10 @@ interactive shell access
 Excecute command in container 
 `docker exec -it go-container /app/myapp -tty /dev/ttyUSB0`
 
-Run in OpWRT
-`./Print2Go -tty <USBdevice> -listen <localip:port>`
+Run in OpenWRT
+`./Print2Go -tty <USBdevice> -baud <baudRate> -listen <localip:port>`
 Example
-`./Print2Go -tty /dev/ttyUSB0 -listen 192.168.8.155:5001`
+`./Print2Go -tty /dev/ttyUSB0 -baud 115200 -listen 192.168.8.155:5001`
 
 ## Development Build (Win/Linux)
 

@@ -76,3 +76,14 @@ service Print2Go-srv status
 
 Enter OpenWRT Luci interface
 http://192.168.8.1:81/cgi-bin/luci/
+
+
+# Update executable: 
+- stop service 
+service Print2Go-srv stop
+- Copy binary
+scp -O ./dist/Print2Go-mipsle root@192.168.8.1:/usr/bin/Print2Go
+- Apply permissions
+chmod +x /usr/bin/Print2Go
+- Restart service
+service Print2Go-srv start
