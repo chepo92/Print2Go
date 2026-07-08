@@ -86,6 +86,11 @@ func main() {
 		return
 	}
 
+	serialCfg := serial.SerialConfig{
+		Port:     *flagTTY,
+		BaudRate: *flagBaud,
+	}
+
 	listenAddr := *flagListen
 
 	// Caso 1: Si el usuario especificó -listen, dejamos eso tal cual
@@ -123,7 +128,7 @@ func main() {
 
 	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
-	s := webapi.New(listenAddr, localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, shutdownFunc(*flagShutdown))
+	s := webapi.New(listenAddr, localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, serialCfg, shutdownFunc(*flagShutdown))
 	//s.SetPortBaudRate(*flagTTY, *flagBaud)
 	// Print some info
 	log.Printf("Host and API Listening on '%s', using serial port: '%s' at baud: %d", listenAddr, *flagTTY, *flagBaud)

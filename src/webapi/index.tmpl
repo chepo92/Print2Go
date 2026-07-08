@@ -353,7 +353,10 @@
               vx.serial.state = d.current.state;
               vx.serial.ports = d.options.ports;
               vx.serial.selectedPort = d.current.port || (d.options.ports && d.options.ports[0]) || "";
-              vx.serial.baudrate = d.current.baudrate || DEFAULT_BAUDRATE;
+              vx.serial.baudrate =
+                d.current.baudrate > 0
+                    ? d.current.baudrate
+                    : DEFAULT_BAUDRATE;
 
               // --- autoconnect ---
               if (

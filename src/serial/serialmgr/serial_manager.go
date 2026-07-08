@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"runtime"
 	"strings"
 	"sync"
@@ -89,9 +90,14 @@ func (sm *SerialManager) Temps() TempState {
 	return sm.temps
 }
 
-func New(openFn func(serial.SerialConfig) (hwserial.Port, error)) *SerialManager {
+func New(
+	openFn func(serial.SerialConfig) (hwserial.Port, error),
+	cfg serial.SerialConfig,
+) *SerialManager {
+
 	return &SerialManager{
 		state:     Disconnected,
+		cfg:       cfg,
 		openFn:    openFn,
 		sendQ:     make(chan GcodeCmd, 16),
 		priorityQ: make(chan GcodeCmd, 8),
@@ -279,7 +285,14 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	sm.cfg = cfg
 	fmt.Printf("[SERIAL] State -> CONNECTING\n")
 
+	// Resolver el puerto antes de abrirlo
+	sm.resolvePortLocked()
+
+	// Recuperar la configuración posiblemente modificada
+	cfg = sm.cfg
 	sm.mu.Unlock()
+
+	fmt.Printf("[SERIAL] Opening port=%s baud=%d\n", cfg.Port, cfg.BaudRate)
 
 	// --- heavy IO out from lock ---
 	port, err := sm.openFn(cfg)
@@ -652,4 +665,36 @@ func (sm *SerialManager) IsPrinting() bool {
 	//job := sm.jobManager.Snapshot()
 	//return job.Active && !job.Paused
 	return !sm.paused
+}
+
+func (sm *SerialManager) resolvePortLocked() {
+
+	ports := sm.AvailablePorts()
+
+	if len(ports) == 0 {
+		return
+	}
+
+	for _, p := range ports {
+		if p == sm.cfg.Port {
+			return
+		}
+	}
+
+	log.Printf("[SERIAL] Port %q not found, using %q",
+		sm.cfg.Port,
+		ports[0],
+	)
+
+	sm.cfg.Port = ports[0]
+}
+
+func (sm *SerialManager) AvailablePorts() []string {
+	ports, err := serial.ListPorts()
+	if err != nil {
+		log.Printf("[SERIAL] Failed to enumerate ports: %v", err)
+		return nil
+	}
+
+	return sm.FilterPorts(ports)
 }

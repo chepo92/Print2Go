@@ -49,9 +49,9 @@ type FileStorage interface {
 }
 
 // New creates a new WebApi instance. Starts a new task and returns the instance.
-func New(listenAddr string, store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (hwserial.Port, error), shutdown func()) *WebApi {
+func New(listenAddr string, store FileStorage, motdFile string, openSerial func(serial.SerialConfig) (hwserial.Port, error), serialCfg serial.SerialConfig, shutdown func()) *WebApi {
 
-	serialMgr := serialmgr.New(openSerial)
+	serialMgr := serialmgr.New(openSerial, serialCfg)
 
 	wapi := &WebApi{
 		listenAddr: listenAddr,
