@@ -317,7 +317,7 @@
   </div>
 
   <script>
-    const DEFAULT_BAUDRATE = 250000;
+    const DEFAULT_BAUDRATE = 115200;
     
     new Vue({
       el: '#app',
@@ -353,10 +353,7 @@
               vx.serial.state = d.current.state;
               vx.serial.ports = d.options.ports;
               vx.serial.selectedPort = d.current.port || (d.options.ports && d.options.ports[0]) || "";
-              vx.serial.baudrate = d.current.baudrate ?? DEFAULT_BAUDRATE;
-
-              vx.serial.Port = d.current.port;
-              vx.serial.BaudRate = d.current.baudrate;
+              vx.serial.baudrate = d.current.baudrate || DEFAULT_BAUDRATE;
 
               // --- autoconnect ---
               if (
