@@ -75,6 +75,10 @@ type SerialManager struct {
 	CommandTimeout time.Duration
 	initTimer      *time.Timer
 	initDone       sync.Once
+	// Maximum time to wait after the last startup message before
+	// considering the printer ready. Every line received during
+	// initialization restarts this timer.
+	InitTimeout time.Duration
 }
 
 type GcodeCmd struct {
@@ -111,6 +115,9 @@ func New(
 		inbound:        make(chan string, 16),
 		stopCh:         make(chan struct{}),
 		CommandTimeout: 5 * time.Second,
+		// Maximum silence after startup output before the printer is
+		// considered initialized. Each received line resets this timer.
+		InitTimeout: 10 * time.Second,
 	}
 }
 
@@ -842,6 +849,9 @@ func (sm *SerialManager) finishInitialization() {
 	})
 }
 
+// Some firmwares emit startup messages for several seconds after the
+// serial port opens. The printer is considered ready only after no
+// new startup output has been received for this duration.
 func (sm *SerialManager) resetInitTimer() {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
@@ -850,7 +860,7 @@ func (sm *SerialManager) resetInitTimer() {
 		sm.initTimer.Stop()
 	}
 
-	sm.initTimer = time.AfterFunc(5*time.Second, func() {
+	sm.initTimer = time.AfterFunc(sm.InitTimeout, func() {
 		sm.finishInitialization()
 	})
 }
