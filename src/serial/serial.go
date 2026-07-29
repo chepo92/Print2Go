@@ -44,7 +44,7 @@ func OpenSerialPort(cfg SerialConfig) (hwserial.Port, error) {
 		BaudRate: cfg.BaudRate,
 	}
 
-	fmt.Printf("[SERIAL] Opening port=%s baud=%d\n", cfg.Port, cfg.BaudRate)
+	fmt.Printf("[SERIAL] Opening selected port=%s baud=%d\n", cfg.Port, cfg.BaudRate)
 
 	port, err := hwserial.Open(cfg.Port, mode)
 	if err != nil {

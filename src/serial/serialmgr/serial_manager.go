@@ -255,27 +255,18 @@ func (sm *SerialManager) readLoop() {
 
 			fmt.Printf("[SERIAL] << %s\n", line)
 
+			// Leer el estado una sola vez
 			sm.mu.Lock()
-			initializing := sm.state == Initializing
+			state := sm.state
+			handler := sm.onLine
 			sm.mu.Unlock()
 
-			if initializing {
-
-				sm.resetInitTimer()
-
-				if strings.HasPrefix(line, "ok") {
-					sm.finishInitialization()
-				}
-
+			// Mostrar SIEMPRE al frontend
+			if handler != nil {
+				handler(line)
 			}
 
-			// Enviar línea cruda al sistema
-			select {
-			case sm.inbound <- line:
-			default:
-				fmt.Printf("[SERIAL] inbound buffer full, dropping line\n")
-			}
-
+			// Procesar acciones espontáneas SIEMPRE
 			if strings.HasPrefix(line, "M118") {
 				if strings.Contains(line, "//action:pause") {
 					sm.handleAction("pause")
@@ -286,12 +277,24 @@ func (sm *SerialManager) readLoop() {
 				}
 			}
 
-			sm.mu.Lock()
-			handler := sm.onLine
-			sm.mu.Unlock()
+			// Mientras inicializa, NO enviar al writeLoop
+			if state == Initializing {
 
-			if handler != nil {
-				handler(line)
+				sm.resetInitTimer()
+
+				if strings.HasPrefix(line, "ok") {
+					sm.finishInitialization()
+				}
+
+				continue
+			}
+
+			// Sólo cuando ya está conectado,
+			// las respuestas pertenecen a comandos.
+			select {
+			case sm.inbound <- line:
+			default:
+				fmt.Printf("[SERIAL] inbound buffer full, dropping line\n")
 			}
 		}
 	}
@@ -350,7 +353,7 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	cfg = sm.cfg
 	sm.mu.Unlock()
 
-	fmt.Printf("[SERIAL] Opening port=%s baud=%d\n", cfg.Port, cfg.BaudRate)
+	fmt.Printf("[SERIAL] Try opening port=%s baud=%d\n", cfg.Port, cfg.BaudRate)
 
 	// --- heavy IO out from lock ---
 	port, err := sm.openFn(cfg)
