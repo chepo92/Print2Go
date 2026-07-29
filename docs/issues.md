@@ -33,6 +33,7 @@ Backend
 - [ ] Timelapse 
 - [ ] Improve autoconnect (duplicating connect?, not showing M117, only autoconnects when a client exist)
 - [ ] Improve time report, front end: Job has been running for 11m 42s. (ok). API shows 44 min or random time 
+- [ ] Homeassistant - Octoprint integration
 
 Frontend
 - [ ] Mordernize Js
