@@ -326,6 +326,7 @@
       data: {
         jobStatus: {},
         viewJobStatus: false,
+        autoConnectTried: false,
         selectedFile: "",
         gcodeInput: "",
         lastActive: false,
@@ -360,15 +361,22 @@
                     ? d.current.baudrate
                     : DEFAULT_BAUDRATE;
 
-              // --- autoconnect ---
+              // --- autoconnect ---              
               if (
-                vx.serial.autoConnect &&
-                vx.serial.state !== "Operational" &&
-                vx.serial.ports.length > 0
+                  vx.serial.autoConnect &&
+                  !vx.autoConnectTried &&
+                  vx.serial.state === "Closed" &&
+                  vx.serial.ports.length > 0
               ) {
-                console.log("[auto-connect] Attempting connection on", vx.serial.selectedPort, "at ", vx.serial.baudrate);
+                vx.autoConnectTried = true;
+                console.log("[auto-connect] Attempting connection on: ", vx.serial.selectedPort, " at ", vx.serial.baudrate);
                 vx.onSerialConnect();
-              }              
+              }   
+              // --- initial states ---       
+              if (d.current.state === "Connecting" ||
+                  d.current.state === "Initializing") {
+                  setTimeout(vx.loadConnection, 1000);
+              }                       
             }
           });
         },

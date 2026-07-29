@@ -101,6 +101,7 @@ func (wapi *WebApi) sendInstanceM117() {
 	cmd := fmt.Sprintf("M117 %s:%s", ip, port)
 
 	fmt.Printf("[WebAPI] Displaying instance on printer: %s\n", cmd)
+
 	if err := wapi.serial.SendGcodePriority(cmd, true); err != nil {
 		fmt.Printf("[WebAPI] Failed to send M117: %v\n", err)
 	}
@@ -192,6 +193,8 @@ func octoStateFromSerial(s serialmgr.SerialState) string {
 	switch s {
 	case serialmgr.Disconnected:
 		return "Closed"
+	case serialmgr.Initializing:
+		return "Connecting"
 	case serialmgr.Connecting:
 		return "Connecting"
 	case serialmgr.Connected:

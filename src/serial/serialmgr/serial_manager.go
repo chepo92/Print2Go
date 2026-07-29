@@ -27,6 +27,7 @@ var (
 const (
 	Disconnected SerialState = iota
 	Connecting
+	Initializing
 	Connected
 	Error
 )
@@ -37,6 +38,8 @@ func (s SerialState) String() string {
 		return "Disconnected"
 	case Connecting:
 		return "Connecting"
+	case Initializing:
+		return "Initializing"
 	case Connected:
 		return "Connected"
 	case Error:
@@ -70,6 +73,8 @@ type SerialManager struct {
 	temps TempState
 
 	CommandTimeout time.Duration
+	initTimer      *time.Timer
+	initDone       sync.Once
 }
 
 type GcodeCmd struct {
@@ -250,6 +255,20 @@ func (sm *SerialManager) readLoop() {
 
 			fmt.Printf("[SERIAL] << %s\n", line)
 
+			sm.mu.Lock()
+			initializing := sm.state == Initializing
+			sm.mu.Unlock()
+
+			if initializing {
+
+				sm.resetInitTimer()
+
+				if strings.HasPrefix(line, "ok") {
+					sm.finishInitialization()
+				}
+
+			}
+
 			// Enviar línea cruda al sistema
 			select {
 			case sm.inbound <- line:
@@ -346,7 +365,7 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 
 	sm.mu.Lock()
 	sm.port = port
-	sm.state = Connected
+	sm.state = Initializing
 
 	// init channels
 	sm.sendQ = make(chan GcodeCmd, 32)
@@ -354,13 +373,20 @@ func (sm *SerialManager) Connect(cfg serial.SerialConfig) error {
 	sm.inbound = make(chan string, 128)
 	sm.stopCh = make(chan struct{})
 
-	fmt.Printf("[SERIAL] Open OK, state -> CONNECTED\n")
+	fmt.Printf("[SERIAL] Open OK, state -> INITIALIZING\n")
 	sm.mu.Unlock()
 
 	// Init write and read Loops
 	go sm.writeLoop()
 	go sm.readLoop()
 	go sm.tempLoop()
+
+	// Start listening for initial messages
+	sm.initDone = sync.Once{}
+
+	sm.mu.Lock()
+	sm.initTimer = time.AfterFunc(5*time.Second, sm.finishInitialization)
+	sm.mu.Unlock()
 
 	if sm.OnConnected != nil {
 		sm.OnConnected()
@@ -443,6 +469,9 @@ func (sm *SerialManager) SendLine(line string) error {
 }
 
 func (sm *SerialManager) SendGcode(line string, wait bool) error {
+	if err := sm.WaitReady(10 * time.Second); err != nil {
+		return err
+	}
 	sm.mu.Lock()
 	if sm.state != Connected {
 		sm.mu.Unlock()
@@ -477,6 +506,9 @@ func (sm *SerialManager) SendGcodeLines(lines []string) error {
 }
 
 func (sm *SerialManager) SendGcodePriority(line string, wait bool) error {
+	if err := sm.WaitReady(10 * time.Second); err != nil {
+		return err
+	}
 	sm.mu.Lock()
 	if sm.state != Connected {
 		sm.mu.Unlock()
@@ -766,4 +798,56 @@ func (sm *SerialManager) resetQueues() {
 
 func (sm *SerialManager) ResetQueues() {
 	sm.resetQueues()
+}
+
+func (sm *SerialManager) WaitReady(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for {
+		sm.mu.Lock()
+		state := sm.state
+		sm.mu.Unlock()
+
+		switch state {
+		case Connected:
+			return nil
+
+		case Initializing:
+			if time.Now().After(deadline) {
+				return fmt.Errorf("initialization timeout")
+			}
+			time.Sleep(100 * time.Millisecond)
+
+		default:
+			return ErrNotConnected
+		}
+	}
+}
+
+func (sm *SerialManager) finishInitialization() {
+
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	if sm.state != Initializing {
+		return
+	}
+
+	sm.initDone.Do(func() {
+		sm.state = Connected
+		fmt.Printf("[SERIAL] Initialization complete, state -> CONNECTED\n")
+	})
+}
+
+func (sm *SerialManager) resetInitTimer() {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	if sm.initTimer != nil {
+		sm.initTimer.Stop()
+	}
+
+	sm.initTimer = time.AfterFunc(5*time.Second, func() {
+		sm.finishInitialization()
+	})
 }
