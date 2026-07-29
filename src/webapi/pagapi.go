@@ -27,3 +27,10 @@ func (wapi *WebApi) pagJobCancel(w http.ResponseWriter, r *http.Request) {
 	wapi.jobManager.Cancel()
 	jsonWrite(w, nil)
 }
+
+func (wapi *WebApi) resetQueue(w http.ResponseWriter, r *http.Request) {
+
+	wapi.serial.ResetQueues()
+
+	w.WriteHeader(http.StatusNoContent)
+}

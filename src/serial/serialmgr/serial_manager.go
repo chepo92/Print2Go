@@ -68,6 +68,8 @@ type SerialManager struct {
 	OnAction func(action string)
 
 	temps TempState
+
+	CommandTimeout time.Duration
 }
 
 type GcodeCmd struct {
@@ -96,13 +98,14 @@ func New(
 ) *SerialManager {
 
 	return &SerialManager{
-		state:     Disconnected,
-		cfg:       cfg,
-		openFn:    openFn,
-		sendQ:     make(chan GcodeCmd, 16),
-		priorityQ: make(chan GcodeCmd, 8),
-		inbound:   make(chan string, 16),
-		stopCh:    make(chan struct{}),
+		state:          Disconnected,
+		cfg:            cfg,
+		openFn:         openFn,
+		sendQ:          make(chan GcodeCmd, 16),
+		priorityQ:      make(chan GcodeCmd, 8),
+		inbound:        make(chan string, 16),
+		stopCh:         make(chan struct{}),
+		CommandTimeout: 5 * time.Second,
 	}
 }
 
@@ -115,12 +118,14 @@ func (sm *SerialManager) SetLineHandler(fn func(string)) {
 // The real writer
 func (sm *SerialManager) writeLoop() {
 	for {
-		fmt.Printf("[SERIAL] writeLoop alive \n")
+		fmt.Printf("[SERIAL] writeLoop alive\n")
+
 		var cmd GcodeCmd
 
+		// Obtener siguiente comando
 		select {
 		case cmd = <-sm.priorityQ:
-			// prioridad absoluta
+			// prioridad
 		default:
 			select {
 			case cmd = <-sm.priorityQ:
@@ -140,9 +145,24 @@ func (sm *SerialManager) writeLoop() {
 			continue
 		}
 
-		for {
+		timeout := time.NewTimer(sm.CommandTimeout)
+		waiting := true
+
+		for waiting {
+
 			select {
+
 			case line := <-sm.inbound:
+
+				// Reiniciar timeout mientras la impresora siga respondiendo
+				if !timeout.Stop() {
+					select {
+					case <-timeout.C:
+					default:
+					}
+				}
+				timeout.Reset(sm.CommandTimeout)
+
 				fmt.Printf("[SERIAL] Reply: %s\n", line)
 
 				if temp, ok := parseTemps(line); ok {
@@ -151,37 +171,56 @@ func (sm *SerialManager) writeLoop() {
 					sm.mu.Unlock()
 				}
 
-				if strings.HasPrefix(line, "ok") {
+				switch {
+
+				case strings.HasPrefix(line, "ok"):
 					if cmd.RespCh != nil {
 						cmd.RespCh <- nil
 					}
-					goto nextCmd
-				} else if strings.HasPrefix(line, "error") {
+					waiting = false
+
+				case strings.HasPrefix(line, "error"):
 					if cmd.RespCh != nil {
 						cmd.RespCh <- fmt.Errorf(line)
 					}
-					goto nextCmd
-				} else if strings.HasPrefix(line, "Unknown") {
+					waiting = false
+
+				case strings.HasPrefix(line, "Unknown"):
 					if cmd.RespCh != nil {
 						cmd.RespCh <- nil
 					}
-					goto nextCmd
-				} else if strings.HasPrefix(line, "echo") {
+					waiting = false
+
+				case strings.HasPrefix(line, "echo"):
 					fmt.Printf("[SERIAL] Printer echo: %s\n", line)
 
-				} else if strings.HasPrefix(line, "T") {
+				case strings.HasPrefix(line, "T:"):
 					fmt.Printf("[SERIAL] Printer temps: %s\n", line)
-				} else {
+
+				default:
 					fmt.Printf("[SERIAL] Unhandled reply: %s\n", line)
 				}
 
+			case <-timeout.C:
+
+				fmt.Printf("[SERIAL] Timeout waiting for reply to '%s'\n", cmd.Line)
+
+				sm.flushInbound()
+
+				if cmd.RespCh != nil {
+					cmd.RespCh <- fmt.Errorf("timeout")
+				}
+
+				waiting = false
+
 			case <-sm.stopCh:
+				timeout.Stop()
 				fmt.Printf("[SERIAL] writeLoop stopped\n")
 				return
 			}
 		}
 
-	nextCmd:
+		timeout.Stop()
 	}
 }
 
@@ -459,11 +498,11 @@ func (sm *SerialManager) SendGcodePriority(line string, wait bool) error {
 	case sm.priorityQ <- cmd:
 		// ok
 	default:
-		// queue full → non blocling
+		// queue full → non blocking
 		if wait {
 			return fmt.Errorf("priority queue full")
 		}
-		fmt.Printf("[SERIAL] priority queue full, dropping command: %s", cmd.Line)
+		fmt.Printf("[SERIAL] priority queue full, dropping command: %s ", cmd.Line)
 		return nil
 	}
 
@@ -697,4 +736,34 @@ func (sm *SerialManager) AvailablePorts() []string {
 	}
 
 	return sm.FilterPorts(ports)
+}
+
+func (sm *SerialManager) flushInbound() {
+	for {
+		select {
+		case <-sm.inbound:
+		default:
+			return
+		}
+	}
+}
+
+func drainQueue(ch chan GcodeCmd) {
+	for len(ch) > 0 {
+		<-ch
+	}
+}
+
+func (sm *SerialManager) resetQueues() {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	fmt.Println("[SERIAL] Resetting command queues")
+
+	drainQueue(sm.sendQ)
+	drainQueue(sm.priorityQ)
+}
+
+func (sm *SerialManager) ResetQueues() {
+	sm.resetQueues()
 }

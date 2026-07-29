@@ -142,6 +142,7 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Post("/print2go/job/cancel", wapi.pagJobCancel)
 	r.Post("/print2go/device/shutdown", wapi.pagShutdown)
 	r.Get("/print2go/gcode/action", wapi.pagEnqueueBuiltin)
+	r.Post("/print2go/serial/resetqueue", wapi.resetQueue)
 
 	// Octoprint-compatibility
 	r.Post("/api/login", octoLoginReply)
