@@ -140,8 +140,6 @@ func (sm *SerialManager) writeLoop() {
 			}
 		}
 
-		fmt.Printf("[SERIAL] >> %s\n", cmd.Line)
-
 		_, err := sm.port.Write([]byte(cmd.Line + "\n"))
 		if err != nil {
 			if cmd.RespCh != nil {
@@ -150,7 +148,9 @@ func (sm *SerialManager) writeLoop() {
 			continue
 		}
 
-		timeout := time.NewTimer(sm.CommandTimeout)
+		cmdTimeout := sm.commandTimeout(cmd.Line)
+		fmt.Printf("[SERIAL] >> %s (timeout=%s)\n", cmd.Line, cmdTimeout)
+		timeout := time.NewTimer(cmdTimeout)
 		waiting := true
 
 		for waiting {
@@ -166,7 +166,7 @@ func (sm *SerialManager) writeLoop() {
 					default:
 					}
 				}
-				timeout.Reset(sm.CommandTimeout)
+				timeout.Reset(cmdTimeout)
 
 				fmt.Printf("[SERIAL] Reply: %s\n", line)
 
@@ -488,7 +488,7 @@ func (sm *SerialManager) SendGcode(line string, wait bool) error {
 		Line:   strings.TrimSpace(line),
 		RespCh: resp,
 	}
-	fmt.Printf("[SendGcode] Added G-code to Q %s\n", line)
+	fmt.Printf("[SendGcode] Added G-code to Queue: %s\n", line)
 
 	if wait {
 		return <-resp
@@ -850,4 +850,28 @@ func (sm *SerialManager) resetInitTimer() {
 	sm.initTimer = time.AfterFunc(5*time.Second, func() {
 		sm.finishInitialization()
 	})
+}
+
+func (sm *SerialManager) commandTimeout(cmd string) time.Duration {
+
+	cmd = strings.TrimSpace(strings.ToUpper(cmd))
+
+	switch {
+
+	// Homing
+	case strings.HasPrefix(cmd, "G28"):
+		return 2 * time.Minute
+
+	// Auto Bed Leveling
+	case strings.HasPrefix(cmd, "G29"):
+		return 5 * time.Minute
+
+	// Esperar temperatura
+	case strings.HasPrefix(cmd, "M109"),
+		strings.HasPrefix(cmd, "M190"):
+		return 15 * time.Minute
+
+	default:
+		return sm.CommandTimeout
+	}
 }
