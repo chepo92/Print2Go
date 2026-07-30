@@ -26,12 +26,12 @@ To Do
 
 Backend
 - [ ] Save and persist config
-- [ ] Agregar timeout para cuando no se realiza la conexion inicial y se queda pegada
+- [x] Agregar timeout para cuando no se realiza la conexion inicial y se queda pegada
 - [ ] Detect stale print
 - [x] Read and report temps
-- [ ] Save file
+- [ ] Save gcode file and persist (for reprint, edit, or recover failed print)
 - [ ] Timelapse 
-- [ ] Improve autoconnect (duplicating connect?, not showing M117, only autoconnects when a client exist)
+- [x] Improve autoconnect (duplicating connect?, not showing M117, only autoconnects when a client exist)
 - [ ] Improve time report, front end: Job has been running for 11m 42s. (ok). API shows 44 min or random time 
 - [ ] Homeassistant - Octoprint integration
 
