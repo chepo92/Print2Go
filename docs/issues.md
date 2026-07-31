@@ -31,7 +31,8 @@ Backend
 - [x] Read and report temps
 - [ ] Save gcode file and persist (for reprint, edit, or recover failed print)
 - [ ] Timelapse 
-- [x] Improve autoconnect (duplicating connect?, not showing M117, only autoconnects when a client exist)
+- [x] Improve autoconnect: duplicating connect?, not showing M117
+- [ ] Improve autoconnect: only autoconnects when a client exist
 - [ ] Improve time report, front end: Job has been running for 11m 42s. (ok). API shows 44 min or random time 
 - [ ] Homeassistant - Octoprint integration
 
