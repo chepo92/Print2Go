@@ -79,13 +79,13 @@ http://192.168.8.1:81/cgi-bin/luci/
 
 
 # Update executable: 
-- stop service 
-service Print2Go-srv stop
-- Copy binary, put the actual ip of the device
-scp -O ./dist/Print2Go_mipsle root@192.168.8.1:/usr/bin/Print2Go
-- Enter by ssh
+- (From the host)Enter by ssh
 ssh root@192.168.8.1
-- Apply permissions
+- (In the device) stop service 
+service Print2Go-srv stop
+- (In ther host) Copy binary, put the actual ip of the device
+scp -O ./dist/Print2Go_mipsle root@192.168.8.1:/usr/bin/Print2Go
+- (In the device) Apply permissions
 chmod +x /usr/bin/Print2Go
-- Restart service
+- (In the device) Restart service
 service Print2Go-srv start
