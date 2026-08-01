@@ -33,6 +33,7 @@ Backend
 - [ ] Timelapse 
 - [x] Improve autoconnect: duplicating connect?, not showing M117
 - [ ] Improve autoconnect: only autoconnects when a client exist
+- [ ] Improve autoconnect: check box resets to check when reload page, persist config in backend (for the running session at least)
 - [ ] Improve time report, front end: Job has been running for 11m 42s. (ok). API shows 44 min or random time 
 - [ ] Homeassistant - Octoprint integration
 
