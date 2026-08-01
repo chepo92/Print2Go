@@ -1,7 +1,6 @@
 package webapi
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -144,6 +143,7 @@ func (wapi *WebApi) Run(srv *http.Server) error {
 	r.Post("/print2go/device/shutdown", wapi.pagShutdown)
 	r.Get("/print2go/gcode/action", wapi.pagEnqueueBuiltin)
 	r.Post("/print2go/serial/resetqueue", wapi.resetQueue)
+	r.Post("/print2go/update", wapi.pagUpdate)
 
 	// Octoprint-compatibility
 	r.Post("/api/login", octoLoginReply)
@@ -208,14 +208,32 @@ func octoStateFromSerial(s serialmgr.SerialState) string {
 
 func (wapi *WebApi) initAutoConnect() {
 	go func() {
-		time.Sleep(5 * time.Second) // dar tiempo a detectar puertos
-		req := map[string]any{
-			"command":     "connect",
-			"port":        "AUTO",
-			"baudrate":    115200,
-			"autoconnect": true,
+
+		time.Sleep(time.Second)
+
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+
+			if !wapi.serial.AutoConnect() {
+				return
+			}
+
+			if wapi.serial.GetState() != serialmgr.Disconnected {
+				return
+			}
+
+			cfg := wapi.serial.GetConfig()
+
+			if cfg.Port == "" {
+				cfg.Port = "AUTO"
+			}
+
+			if err := wapi.connect(cfg); err == nil {
+				fmt.Printf("[SERIAL] AutoConnect succeeded\n")
+				return
+			}
 		}
-		buf, _ := json.Marshal(req)
-		http.Post("http://localhost/api/connection", "application/json", bytes.NewReader(buf))
 	}()
 }
