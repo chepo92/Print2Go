@@ -110,26 +110,12 @@ func main() {
 		listenAddr = fmt.Sprintf("%s:%d", ip, *flagPort)
 	}
 
-	// if os.Args[len(os.Args)-1] == ":serial-pipe" {
-	// 	serial.RunPipe(*flagTTY, *flagBaud)
-	// 	return
-	// }
-	// if os.Args[len(os.Args)-1] == ":camera-pipe" {
-	// 	// camera.RunPipe(*flagCamera, 640, 480) // will not call this func/lib in win
-	// 	return
-	// }
-
 	// Declare the server
 	srv := &http.Server{
 		Addr: listenAddr,
 	}
-	// Setup serial port reader
-	//serialPortReader := serial.NewSerialPortFunc()
-
-	//s := webapi.New(*flagCamera, localstore.New(*flagStorage), *flagMotd, spf, shutdownFunc(*flagShutdown))
 	// create webapi without camera for windows build
 	s := webapi.New(listenAddr, localstore.New(*flagStorage), *flagMotd, serial.OpenSerialPort, serialCfg, shutdownFunc(*flagShutdown))
-	//s.SetPortBaudRate(*flagTTY, *flagBaud)
 	// Print some info
 	log.Printf("Host and API Listening on '%s', using serial port: '%s' at baud: %d", listenAddr, *flagTTY, *flagBaud)
 	log.Printf("Storage path is '%s', shutdown script is '%s', motd file is '%s', camera is '%s'", *flagStorage, *flagShutdown, *flagMotd, *flagCamera)
@@ -139,42 +125,6 @@ func main() {
 		xdie("server exited: %v", err)
 	}
 }
-
-// oneshotPrint just prints the specified gcode file.
-// func oneshotPrint(tty string, baud int, gcodeFileName string) {
-// 	log.Printf("Printing: '%s' on %s\n", gcodeFileName, tty)
-// 	// Create task
-// 	task := task.New()
-// 	// Open serial port
-// 	workingPort, err := serial.NewSerialPortFunc()
-// 	if err != nil {
-// 		xdie("Failed to attach serial port: %v", err)
-// 	}
-// 	defer workingPort.Close()
-// 	// Open gcode file
-// 	fh, err := os.Open(gcodeFileName)
-// 	if err != nil {
-// 		xdie("Failed to open gcode: %v", err)
-// 	}
-// 	defer fh.Close()
-// 	// Create gcode file stream object
-// 	gf, err := localstore.FromFilehandle(fh)
-// 	if err != nil {
-// 		xdie("Failed to open stream: %v", err)
-// 	}
-// 	fmt.Printf("Gcode size is: '%d'", gf.Size())
-
-// 	// Start print task asynchronously
-// 	err = task.Launch(workingPort, gf)
-// 	if err != nil {
-// 		xdie("Task setup failed: %v", err)
-// 	}
-// 	// Wait until done
-// 	for !task.Done() {
-// 		time.Sleep(time.Second)
-// 		log.Printf("Working...\n")
-// 	}
-// }
 
 func shutdownFunc(script string) func() {
 	return func() {
