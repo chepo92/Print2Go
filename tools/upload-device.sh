@@ -22,11 +22,28 @@ fi
 echo "Uploading to ${DEVICE_IP}..."
 
 
-curl.exe \
--v \
--F "file=@${BINARY}" \
-"http://${DEVICE_IP}:5001/print2go/update"
+HTTP_CODE=$(curl.exe \
+    -s \
+    -o /tmp/print2go-update-response.txt \
+    -w "%{http_code}" \
+    -F "file=@${BINARY}" \
+    "http://${DEVICE_IP}:5001/print2go/update"
+)
 
+
+echo "HTTP ${HTTP_CODE}"
+
+
+if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "204" ]; then
+
+    echo "Update failed on ${DEVICE_IP}"
+    cat /tmp/print2go-update-response.txt
+    exit 1
+
+fi
+
+
+cat /tmp/print2go-update-response.txt
 
 echo
 echo "Done: ${DEVICE_IP}"

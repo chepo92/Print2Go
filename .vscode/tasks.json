@@ -12,21 +12,15 @@
             "problemMatcher": []
         },
         {
-            "label": "Print2Go: Update Device",
+            "label": "Print2Go: Build and Update to Device",
             "type": "shell",
-            "command": "${workspaceFolder}/tools/update-device.sh 192.168.1.112",
+            "command": "${workspaceFolder}/tools/build-update-device.sh 192.168.1.112",
             "problemMatcher": []
         },
         {
             "label": "Print2Go: Update Fleet",
             "type": "shell",
-            "command": "${workspaceFolder}/tools/update-all.sh 192.168.1.112 192.168.1.113 192.168.1.114 192.168.1.115",
-            "problemMatcher": []
-        },
-        {
-            "label": "Print2Go: Update Fleet from list file",
-            "type": "shell",
-            "command": "${workspaceFolder}/tools/update-txt.sh",
+            "command": "${workspaceFolder}/tools/update-fleet.sh",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",
