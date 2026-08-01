@@ -470,8 +470,11 @@ type ConnectionReply struct {
 func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, r *http.Request) {
 	state := wapi.serial.GetState()
 	cfg := wapi.serial.GetConfig()
+	autoconnect_config := wapi.serial.AutoConnect()
 
 	ports, err := serial.ListPorts()
+
+	fmt.Printf("[API] GET /connection autoconnect=%v\n", autoconnect_config)
 
 	if err != nil {
 		ports = []string{} // fallback seguro
@@ -513,7 +516,7 @@ func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, r *http.Reques
 			PortPreference:           cfg.Port,
 			BaudratePreference:       cfg.BaudRate,
 			PrinterProfilePreference: "_default",
-			Autoconnect:              false,
+			Autoconnect:              autoconnect_config,
 		},
 	}
 
@@ -521,9 +524,10 @@ func (wapi *WebApi) octoGetConnectionReply(w http.ResponseWriter, r *http.Reques
 }
 
 type ConnectionCommand struct {
-	Command  string `json:"command"`
-	Port     string `json:"port,omitempty"`
-	Baudrate int    `json:"baudrate,omitempty"`
+	Command     string `json:"command"`
+	Port        string `json:"port,omitempty"`
+	Baudrate    int    `json:"baudrate,omitempty"`
+	Autoconnect *bool  `json:"autoconnect,omitempty"`
 }
 
 func (wapi *WebApi) octoPostConnectionReply(w http.ResponseWriter, rq *http.Request) {
@@ -540,8 +544,11 @@ func (wapi *WebApi) octoPostConnectionReply(w http.ResponseWriter, rq *http.Requ
 			Port:     cmd.Port,
 			BaudRate: cmd.Baudrate,
 		}
+		if cmd.Autoconnect != nil {
+			wapi.serial.SetAutoConnect(*cmd.Autoconnect)
+		}
 
-		if err := wapi.serial.Connect(cfg); err != nil {
+		if err := wapi.connect(cfg); err != nil {
 			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		}
@@ -625,4 +632,26 @@ func octoSetupWizardReply(w http.ResponseWriter, rq *http.Request) {
 		TBI: "To be implemented",
 	}
 	jsonWrite(w, reply)
+}
+
+func (wapi *WebApi) connect(cfg serial.SerialConfig) error {
+
+	// AUTO o puerto vacío -> buscar automáticamente
+	if cfg.Port == "" || strings.EqualFold(cfg.Port, "AUTO") {
+
+		ports, err := serial.ListPorts()
+		if err != nil {
+			return err
+		}
+
+		ports = wapi.serial.FilterPorts(ports)
+
+		if len(ports) == 0 {
+			return fmt.Errorf("no serial ports available")
+		}
+
+		cfg.Port = ports[0]
+	}
+
+	return wapi.serial.Connect(cfg)
 }

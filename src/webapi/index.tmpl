@@ -343,7 +343,7 @@
           ports: [],
           selectedPort: "",
           baudrate: DEFAULT_BAUDRATE,
-          autoConnect: true
+          autoConnect: false
         }       
       },
       methods: {
@@ -353,30 +353,23 @@
             url: '/api/connection',
             method: 'GET',
             success: function (d) {
-              vx.serial.state = d.current.state;
-              vx.serial.ports = d.options.ports;
-              vx.serial.selectedPort = d.current.port || (d.options.ports && d.options.ports[0]) || "";
-              vx.serial.baudrate =
-                d.current.baudrate > 0
-                    ? d.current.baudrate
-                    : DEFAULT_BAUDRATE;
-
-              // --- autoconnect ---              
-              if (
-                  vx.serial.autoConnect &&
-                  !vx.autoConnectTried &&
-                  vx.serial.state === "Closed" &&
-                  vx.serial.ports.length > 0
-              ) {
-                vx.autoConnectTried = true;
-                console.log("[auto-connect] Attempting connection on: ", vx.serial.selectedPort, " at ", vx.serial.baudrate);
-                vx.onSerialConnect();
-              }   
-              // --- initial states ---       
-              if (d.current.state === "Connecting" ||
-                  d.current.state === "Initializing") {
-                  setTimeout(vx.loadConnection, 1000);
-              }                       
+                vx.serial.state = d.current.state;
+                vx.serial.ports = d.options.ports;
+                vx.serial.selectedPort =
+                    d.current.port ||
+                    (d.options.ports && d.options.ports[0]) ||
+                    "";
+                vx.serial.baudrate =
+                    d.current.baudrate > 0
+                        ? d.current.baudrate
+                        : DEFAULT_BAUDRATE;
+                vx.serial.autoConnect = d.options.autoconnect;
+                if (
+                    d.current.state === "Connecting" ||
+                    d.current.state === "Initializing"
+                ) {
+                    setTimeout(vx.loadConnection, 1000);
+                }
             }
           });
         },
@@ -390,7 +383,7 @@
               command: "connect",
               port: vx.serial.selectedPort || "AUTO",
               baudrate: vx.serial.baudrate ?? DEFAULT_BAUDRATE,
-              autoconnect: true
+              autoconnect: vx.serial.autoConnect
             }),
             success: function () {
               vx.loadConnection();

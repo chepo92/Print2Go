@@ -53,8 +53,9 @@ type SerialManager struct {
 	mu    sync.Mutex
 	state SerialState
 
-	port hwserial.Port
-	cfg  serial.SerialConfig
+	port        hwserial.Port
+	cfg         serial.SerialConfig
+	autoConnect bool
 
 	openFn func(serial.SerialConfig) (hwserial.Port, error)
 
@@ -118,6 +119,7 @@ func New(
 		// Maximum silence after startup output before the printer is
 		// considered initialized. Each received line resets this timer.
 		InitTimeout: 10 * time.Second,
+		autoConnect: true,
 	}
 }
 
@@ -887,4 +889,16 @@ func (sm *SerialManager) commandTimeout(cmd string) time.Duration {
 	default:
 		return sm.CommandTimeout
 	}
+}
+
+func (sm *SerialManager) AutoConnect() bool {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	return sm.autoConnect
+}
+
+func (sm *SerialManager) SetAutoConnect(enabled bool) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.autoConnect = enabled
 }
