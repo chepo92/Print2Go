@@ -78,7 +78,7 @@ Enter OpenWRT Luci interface
 http://192.168.8.1:81/cgi-bin/luci/
 
 
-# Update executable: 
+# Update executable in device: 
 - (From the host)Enter by ssh
 ssh root@192.168.8.1
 - (In the device) stop service 
@@ -89,3 +89,6 @@ scp -O ./dist/Print2Go_mipsle root@192.168.8.1:/usr/bin/Print2Go
 chmod +x /usr/bin/Print2Go
 - (In the device) Restart service
 service Print2Go-srv start
+
+
+curl.exe -v -F "file=@Print2Go_mipsle" http://192.168.1.112:5001/print2go/update

@@ -102,18 +102,24 @@ $ kill -USR1 351  # send SIGUSR1
 ```
 
 
-# Better workflow: 
+# Better workflow (recommended): 
 Build image
 `docker build -f docker/Dockerfile --target builder -t print2go-builder .`
 
 Create container, just run once for the first time: 
-Create container by mounting volume (changes are reflected instantly within the container)
+Create container by mounting volume, posterior changes are reflected instantly within the container, useful for development
 `docker run -it --name print2go-dev -v ${PWD}:/workspace -w /workspace/src print2go-builder sh`
 
-Start anytime, subsequent executions
+Start anytime, subsequent executions (just once for session)
 `docker start -ai print2go-dev`
 
-Build app, eg. 
+Build app, run anytime eg. 
 `GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o ../dist/Print2Go_mipsle`
+`GOOS=windows GOARCH=amd64  go build -o ../dist/Print2Go-Win64.exe`
 
-Built binary appears automatically in host dist folder, just run or copy to target device
+The built binary appears automatically in host dist folder, just run or copy to target device
+
+
+# Semi auto workflow
+Give permissions (in windows use git bash, just once)
+chmod +x tools/update.sh and other files
