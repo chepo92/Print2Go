@@ -12,7 +12,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Print2Go: Build and Update to Device",
+            "label": "Print2Go: Build and Upload to Device",
             "type": "shell",
             "command": "${workspaceFolder}/tools/build-update-device.sh 192.168.1.112",
             "problemMatcher": []

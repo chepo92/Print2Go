@@ -120,6 +120,8 @@ Build app, run anytime eg.
 The built binary appears automatically in host dist folder, just run or copy to target device
 
 
-# Semi auto workflow
-Give permissions (in windows use git bash, just once)
-chmod +x tools/update.sh and other files
+# Semi-auto workflow
+You may (or not) need to give permissions (in windows use git bash, just once)
+chmod +x tools/build-mips.sh and other files
+
+Just use the tasks in VS Code: Build, Build&Upload and Update Fleet
