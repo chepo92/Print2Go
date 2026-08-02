@@ -90,5 +90,8 @@ chmod +x /usr/bin/Print2Go
 - (In the device) Restart service
 service Print2Go-srv start
 
+# Update (recommended) 
+Using curl, the device and code automatically uploads, checks, stops, replaces and restart service: 
+curl.exe -v -F "file=@Print2Go_mipsle" http://192.168.8.1:5001/print2go/update
 
-curl.exe -v -F "file=@Print2Go_mipsle" http://192.168.1.112:5001/print2go/update
+There are VS Code Task that automate the build (needs docker) and upload
