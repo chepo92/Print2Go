@@ -8,7 +8,7 @@ PrintAndGo is a lightweight and simple web based program written in Go to feed g
 
 It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to PrintAndGo.
 
-It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) by [Adrian](https://github.com/adrian-bl)
+It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) by [Adrian](https://github.com/adrian-bl), and the octoPrint API
 
 ## Features
 
