@@ -1,2 +1,5 @@
 /builds/*
 ignore/*
+dist/*
+devices.txt
+scratch/*
