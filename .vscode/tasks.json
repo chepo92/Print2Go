@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Print2Go: Build MIPS",
+            "type": "shell",
+            "command": "${workspaceFolder}/tools/build-mips.sh",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Print2Go: Build and Upload to Device",
+            "type": "shell",
+            "command": "${workspaceFolder}/tools/build-update-device.sh 192.168.1.112",
+            "problemMatcher": []
+        },
+        {
+            "label": "Print2Go: Update Fleet",
+            "type": "shell",
+            "command": "${workspaceFolder}/tools/update-fleet.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true,
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": []
+        }        
+    ]
+}

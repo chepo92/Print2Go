@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+USE_PROCD=1
+SERVICE=/usr/bin/Print2Go
+
+wait_for_ip() {
+    echo "Waiting IP in wwan..."
+    ubus wait_for network.interface.wwan
+
+    while true; do
+        IP=$(ifstatus wwan | jsonfilter -e '@["ipv4-address"][0].address')
+        if [ -n "$IP" ]; then
+            echo "IP assigned in wwan: $IP"
+            break
+        fi
+        sleep 1
+    done
+}
+
+start_service() {
+		wait_for_ip
+        procd_open_instance
+		procd_set_param command "$SERVICE" -ip auto
+#		procd_set_param command /usr/bin/Print2Go -ip auto
+#        procd_set_param command /usr/bin/Print2Go -listen 192.168.8.201:5001
+#        procd_append_param command       
+#        procd_set_param respawn  # respawn the service if it exits
+        procd_set_param stdout 1 # forward stdout of the command to logd
+        procd_set_param stderr 1 # same for stderr
+		
+#		procd_set_param netdev phy0-sta0
+		
+        procd_close_instance
+}

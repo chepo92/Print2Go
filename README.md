@@ -1,12 +1,12 @@
-# PrintAndGo
+# Print2Go
 
 3D printer host written in Go language with "Octoprint" functionalities 
 
 Convert any router with a USB port in a 3D printer host, with an Octoprint-like API
 
-PrintAndGo is a lightweight and simple web based program written in Go to feed gcode to a 3d printer (aka gcode sender, 3d printer host)
+Print2Go is a lightweight and simple web based program written in Go to feed gcode to a 3d printer (aka gcode sender, 3d printer host)
 
-It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to PrintAndGo.
+It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to Print2Go.
 
 It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) by [Adrian](https://github.com/adrian-bl), and the octoPrint API
 
@@ -15,12 +15,12 @@ It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) b
 - Written in Go and Multiplatform: Compile from source for your target device or use the release binaries, run it in your host device.
 - Compatible with Windows and Linux operating systems. 
 - Compatible with many target hardware, if your target is supported in Go, it should be compatible 
-- Aimed for lightweight: PrintAndGo doesn't need a lot of resources is only a 12MB binary (still not optimized)
+- Aimed for lightweight: Print2Go doesn't need a lot of resources is only a 12MB binary (still not optimized)
 - Low hardware resource requirement: Will work well even on older/or low specs hardware
 - Can run in OpenWRT. This means you can use almost any router with usb port that supports OpenWRT or even in the Creality Wifi Box
 - Compatible with any 3D printer with usb port that has some version of Marlin firmware (or accepts standard gcode over serial)
 - Octoprint emulation: Mimics the basic Octoprint API allowing for direct Gcode upload from various slicers (Cura, PrusaSlicer)
-- Custom hooks: PrintAndGo can execute custom scripts after your print is finished (eg. to turn off your printer).
+- Custom hooks: Print2Go can execute custom scripts after your print is finished (eg. to turn off your printer).
 - Simple: Web User interface with just the minimum required operations for printing
 - OctoPrint minimal API implementation: Send custom Gcode, and upload file for inmediate printing
 
@@ -31,13 +31,13 @@ This project is related to [OctoWrt](https://github.com/shivajiva101/OctoWrt), a
 
 ## Screenshots
 
-![webinterface](/img/printandgo_home_gui.png)
+![webinterface](/img/print2go_home_gui.png)
 
-![webinterface](/img/printandgo_upload.png)
+![webinterface](/img/print2go_upload.png)
 
-![webinterface](/img/printandgo_printing.png)
+![webinterface](/img/print2go_printing.png)
 
-![webinterface](/img/printandgo_done.png)
+![webinterface](/img/print2go_done.png)
 
 
 ##  Install, Run and Usage 
@@ -48,23 +48,23 @@ No install is required, just run the executables/binaries according to your plat
 
 In a command line or shell in windows or linux, run:
 ```
-./PrintAndGo  -tty <host_device_path>
+./Print2Go  -tty <host_device_path>
 ```
 
 Note: In windows you can double click the .exe, but will use the default configuration 
 
 Examples:
 ```
-./PrintAndGo -tty COM3
-./PrintAndGo -tty /dev/ttyUSB0
+./Print2Go -tty COM3
+./Print2Go -tty /dev/ttyUSB0
 ```
 
-PrintAndGo is configured via flags. By default, PrintAndGo will listen on
+Print2Go is configured via flags. By default, Print2Go will listen on
 `127.0.0.1:5001` and expect a printer on `/dev/ttyUSB0` (Linux) or COM3 (Windows):
 
 ```shell
-$ ./PrintAndGo -h
-Usage of ./PrintAndGo:
+$ ./Print2Go -h
+Usage of ./Print2Go:
   -baud int
         baud rate of -port (default 115200)
   -gcode string
@@ -72,18 +72,18 @@ Usage of ./PrintAndGo:
   -listen string
         ip:port to bind to (default "127.0.0.1:5001")
   -shutdown-script string
-        script to execute to shutdown the printer (default "/usr/lib/printandgo-shutdown.sh")
+        script to execute to shutdown the printer (default "/usr/lib/Print2Go-shutdown.sh")
   -storage string
-        path to store gcode in (default "/tmp/printandgo")
+        path to store gcode in (default "/tmp/Print2Go")
   -tty string
         tty to use (default "/dev/ttyUSB0")
 ```
 
-Note that PrintAndGo only listens on `127.0.0.1` by default. You can tell PrintAndGo to listen on
+Note that Print2Go only listens on `127.0.0.1` by default. You can tell Print2Go to listen on
 all interfaces by running it via:
 
 ```
-$ ./printandgo -listen ':5001'
+$ ./Print2Go -listen ':5001'
 ```
 
 
@@ -97,10 +97,10 @@ Note: Mapping usb devices from windows as host to linux involves configuring WSL
 For dev or other purposes can be run without mapping usb device
 `docker run -p 5001:5001 -d -it --name go-container go-builder-linux-img:1.0`
 
-2. Run PrintAndGo
-`docker exec -it go-container /app/PrintAndGo -tty /dev/ttyUSB0 -listen 0.0.0.0:5001`
+2. Run Print2Go
+`docker exec -it go-container /app/Print2Go -tty /dev/ttyUSB0 -listen 0.0.0.0:5001`
 
-Note: PrintAndGo uses default ip 127.0.0.1 which is local only (cannot access from outside container), on the other hand docker uses 0.0.0.0 for exposing ports and services outside container, so we specify `-listen 0.0.0.0`, the port 5001 is the default of octoprint and can be changed (but need to change the docker file if you want another port)
+Note: Print2Go uses default ip 127.0.0.1 which is local only (cannot access from outside container), on the other hand docker uses 0.0.0.0 for exposing ports and services outside container, so we specify `-listen 0.0.0.0`, the port 5001 is the default of octoprint and can be changed (but need to change the docker file if you want another port)
 
 ### Other commands: 
 
@@ -113,10 +113,10 @@ interactive shell access
 Excecute command in container 
 `docker exec -it go-container /app/myapp -tty /dev/ttyUSB0`
 
-Run in OpWRT
-`./PrintAndGo -tty <USBdevice> -listen <localip:port>`
+Run in OpenWRT
+`./Print2Go -tty <USBdevice> -baud <baudRate> -listen <localip:port>`
 Example
-`./PrintAndGo -tty /dev/ttyUSB0 -listen 192.168.8.155:5001`
+`./Print2Go -tty /dev/ttyUSB0 -baud 115200 -listen 192.168.8.155:5001`
 
 ## Development Build (Win/Linux)
 
@@ -124,7 +124,7 @@ See [Readme-dev.md](/Readme-dev.md)
 
 ## Post print Script
 
-PrintAndGo can be configured to run a command after the print finished. Eg. Automatic shutdown
+Print2Go can be configured to run a command after the print finished. Eg. Automatic shutdown
 By default, `/usr/lib/takoprint-shutdown.sh` will be executed (can be configured using the `-shudtown-script` flag).
 
 The script could then execute a command to turn off a 'smart' power plug.
@@ -147,17 +147,21 @@ done
 
 # Octoprint API Coverage
 
-PrintAndGo implements the minimum required for printing of the Octoprint [API](https://docs.octoprint.org/en/main/api/index.html)
+Print2Go implements the minimum required for printing of the Octoprint [API](https://docs.octoprint.org/en/main/api/index.html)
 Some are just the endpoint with hardcoded response and no logic or validation. 
 The endpoints are coded in [webapi.go](/webapi/webapi.go) and implemented in [octoapi.go](/webapi/octoapi.go)
 
 # Autostart 
 
-Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-scripts), there is an example file included in the repo to make the script autostart at boot as a service. See: [PrintAndGo-srv](/PrintAndGo-srv), modify it acordingly to your configuration and ip.
+Acording to [instructions](https://openwrt.org/docs/guide-developer/procd-init-scripts), there is an example file included in the repo to make the script autostart at boot as a service. See: [Print2Go-srv](/Print2Go-srv), modify it acordingly to your configuration and ip.
 
 
-# Planned features/idea
+# Future features and ideas
 
+- [ ] Improve UI/UX
+- [ ] Persist config
+- [ ] Print file in storage
+- [ ] Disable controls when printer is not connected
 - [ ] Telegram Notification integration
 - [ ] Homeassistant integration
 - [x] Send custom commands
