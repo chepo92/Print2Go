@@ -1,2 +1,4 @@
 /builds/*
 ignore/*
+dist/*
+devices.txt
