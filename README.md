@@ -8,7 +8,7 @@ PrintAndGo is a lightweight and simple web based program written in Go to feed g
 
 It offers a convenient webinterface and mimics Octoprints upload API, meaning that common slicer software will be able to directly upload gcode to PrintAndGo.
 
-It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) by [Adrian](https://github.com/adrian-bl)
+It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) by [Adrian](https://github.com/adrian-bl), and the octoPrint API
 
 ## Features
 
@@ -24,9 +24,9 @@ It's based in the code of [Takoprint](https://git.sr.ht/~adrian-blx/takoprint) b
 - Simple: Web User interface with just the minimum required operations for printing
 - OctoPrint minimal API implementation: Send custom Gcode, and upload file for inmediate printing
 
-## Brief story of the objective an purpose of this project
+## Brief story of the objective and purpose of this project
 
-This project is related to [OctoWrt](https://github.com/shivajiva101/OctoWrt), and the addition of the Creality WifiBox (WB01) in [OpenWRT](https://github.com/openwrt/openwrt/pull/19686). OctoPrint is a great sofware and tool, but not very optimized for low resource hardware (lower than a raspberry pi 3, which was the original target hardware as far as I know) such as a router. I had previously contributed in a Octoprint-like (or mimic) firmware for embedded devices as ESP8266 or ESP32 see [WirelessPrinting](https://github.com/probonopd/WirelessPrinting), but there was missing sofware solution for the intermediate hardware between embedded devices and mini-pc. So it needed some leverage, then I found [Takoprint](https://git.sr.ht/~adrian-blx/takoprint), added some functions and connected the other projects (OctoWrt and OpenWRT) together.
+This project is related to [OctoWrt](https://github.com/shivajiva101/OctoWrt), and the addition of the Creality WifiBox (WB01) in [OpenWRT](https://github.com/openwrt/openwrt/pull/19686). OctoPrint is a great sofware and tool, but not very optimized for low resource hardware (lower than a raspberry pi 3, which was the original target hardware as far as I know) such as a router. I had previously contributed in a Octoprint-like (or mimic) firmware for embedded devices as ESP8266 or ESP32 see [WirelessPrinting](https://github.com/probonopd/WirelessPrinting), but there was missing sofware solution for the intermediate hardware between embedded devices and mini-pc. So it needed some leverage, then I found [Takoprint](https://git.sr.ht/~adrian-blx/takoprint), it was the perrfect excuse for learning and applying Go language, so hands on, I connected the other projects (OctoWrt and OpenWRT) together.
 
 
 ## Screenshots
